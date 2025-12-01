@@ -1,0 +1,4653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kakkson Extranet - Hotel Management</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.44.2"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+:root {
+  --primary: #1976d2;
+  --primary-dark: #1565c0;
+  --primary-light: #e3f2fd;
+  --secondary: #ff9800;
+  --secondary-dark: #f57c00;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+  --dark: #263238;
+  --light: #f5f7f9;
+  --gray: #78909c;
+  --white: #ffffff;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --radius: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  color: var(--dark);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  background-color: var(--white);
+  padding: 15px 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  color: var(--primary);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-button {
+  background-color: var(--light);
+  color: var(--gray);
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-button:hover {
+  background-color: #e0e0e0;
+}
+
+.nav-button.active {
+  background-color: var(--primary);
+  color: var(--white);
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.4);
+}
+
+.tab-content {
+  background-color: var(--white);
+  padding: 20px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-top: 20px;
+  min-height: 60vh;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.data-table th, .data-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eceff1;
+}
+
+.data-table th {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.data-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: var(--white);
+  margin: 5% auto;
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 600px;
+  animation: modal-open 0.3s ease-out;
+}
+
+@keyframes modal-open {
+  from {opacity: 0; transform: translateY(-50px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.close-btn {
+  color: var(--gray);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.close-btn:hover, .close-btn:focus {
+  color: var(--error);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s, box-shadow 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.5);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--dark);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark);
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: var(--white);
+}
+
+.btn-error {
+  background-color: var(--error);
+  color: var(--white);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.toast-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s, transform 0.5s;
+    transform: translateX(100%);
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-success { background-color: var(--success); }
+.toast-error { background-color: var(--error); }
+.toast-warning { background-color: var(--warning); }
+.toast-info { background-color: var(--primary); }
+
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.meal-plan-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.rate-input, .inventory-input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.rate-input:focus, .inventory-input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.stats-card {
+  background: var(--primary-light);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stats-card h3 {
+  color: var(--primary-dark);
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.stats-card .number {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.date-header {
+  min-width: 140px;
+  white-space: nowrap;
+  background: var(--primary-light);
+  font-weight: 600;
+}
+
+.room-type-header {
+  min-width: 180px;
+  text-align: center;
+  background: var(--primary-light);
+  font-weight: 600;
+}
+
+.rate-cell, .inventory-cell {
+  min-width: 120px;
+  text-align: center;
+  position: relative;
+}
+
+.rate-cell-group, .inventory-cell-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.rate-value, .inventory-value {
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.save-btn {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.save-btn:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.save-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.excel-btn {
+  background-color: #217346;
+  color: white;
+}
+
+.excel-btn:hover {
+  background-color: #1a5c38;
+}
+
+.rate-table th, .inventory-table th {
+  position: sticky;
+  top: 0;
+  background: var(--primary-light);
+  z-index: 10;
+}
+
+.meal-plan-label {
+  font-size: 11px;
+  color: var(--gray);
+  font-weight: 500;
+}
+
+.highlight-row {
+  background-color: #fff8e1 !important;
+  transition: background-color 0.3s ease;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.input-with-save {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.room-occupancy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.room-occupancy-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  background: #fafafa;
+}
+
+.room-occupancy-card h4 {
+  margin-bottom: 10px;
+  color: var(--primary-dark);
+}
+
+.photo-upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.photo-upload-area:hover {
+  border-color: var(--primary);
+}
+
+.photo-preview {
+  max-width: 200px;
+  max-height: 150px;
+  margin: 10px auto;
+  display: none;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.calendar-navigation button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.calendar-navigation button:hover {
+  background: var(--primary-dark);
+}
+
+.rooms-sold {
+  font-size: 10px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+.offer-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #f9f9f9;
+}
+
+.offer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.offer-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.uploaded-image {
+  max-width: 100%;
+  max-height: 200px;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+.gallery-item .delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.filter-section {
+  background: var(--light);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.filter-section h3 {
+  color: var(--primary-dark);
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  align-items: end;
+}
+
+.bulk-days-selection {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.bulk-days-selection h4 {
+  margin-bottom: 10px;
+  color: var(--primary-dark);
+  font-size: 14px;
+}
+
+.days-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.day-checkbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.day-checkbox:hover {
+  background: #e9ecef;
+}
+
+.day-checkbox.selected {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.day-checkbox input {
+  margin-bottom: 5px;
+}
+
+.day-checkbox label {
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.select-all-days {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.select-all-days:hover {
+  background: var(--primary-dark);
+}
+
+.tax-rate-input {
+  max-width: 200px;
+}
+
+.hotel-edit-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--light);
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.hotel-edit-section h3 {
+  color: var(--primary-dark);
+  margin-bottom: 15px;
+}
+
+/* New styles for inventory table with room types as columns */
+.inventory-table-rotated th, .inventory-table-rotated td {
+  text-align: center;
+  padding: 8px 12px;
+}
+
+.inventory-table-rotated .date-row-header {
+  background: var(--primary-light);
+  font-weight: 600;
+  text-align: left;
+}
+
+.extra-adult-rate-input {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.extra-adult-rate-label {
+  font-size: 10px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+.rooms-sold-badge {
+  background: #ff6b6b;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* Fix for photo upload preview */
+.photo-preview {
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Individual save buttons for tables */
+.save-cell {
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.save-cell button {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.save-cell button:hover:not(:disabled) {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.save-cell button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Inventory table with dates as rows and room types as columns */
+.inventory-rotated-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inventory-rotated-table th {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.inventory-rotated-table td {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.inventory-rotated-table .date-cell {
+  background: var(--primary-light);
+  font-weight: 600;
+  text-align: left;
+  min-width: 120px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+.inventory-input-rotated {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.inventory-input-rotated:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.changed-cell {
+  background-color: #fff8e1 !important;
+  border: 1px solid #ffd54f !important;
+}
+
+/* Fix for rate table layout */
+.rate-table-fixed {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rate-table-fixed th {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.rate-table-fixed td {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.rate-table-fixed .date-cell {
+  background: var(--primary-light);
+  font-weight: 600;
+  text-align: left;
+  min-width: 150px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+.rate-input-fixed {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.rate-input-fixed:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* New styles for rates table with dates as rows and room types as columns */
+.rates-rotated-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rates-rotated-table th {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.rates-rotated-table td {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.rates-rotated-table .date-cell {
+  background: var(--primary-light);
+  font-weight: 600;
+  text-align: left;
+  min-width: 150px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+.rates-input-rotated {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.rates-input-rotated:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.rate-plan-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.rate-plan-label {
+  font-size: 10px;
+  color: var(--gray);
+  font-weight: 500;
+}
+
+.rate-save-cell {
+  text-align: center;
+  padding: 4px;
+}
+
+.rate-save-btn {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.rate-save-btn:hover:not(:disabled) {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.rate-save-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rate-plan-section {
+  margin-bottom: 8px;
+}
+
+.rate-plan-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Footer Styles */
+.footer {
+    background-color: var(--primary-dark);
+    color: var(--white);
+    padding: 20px 0;
+    margin-top: 40px;
+    border-top: 3px solid var(--secondary);
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    text-align: center;
+}
+
+.footer-text {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.footer-text strong {
+    color: var(--secondary);
+}
+
+.footer-links {
+    margin-top: 10px;
+}
+
+.footer-link {
+    color: var(--white);
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 13px;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.footer-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* NEW STYLES FOR ENHANCED FEATURES */
+
+/* Manual Save Buttons for Inventory */
+.inventory-save-cell {
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.inventory-save-btn {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.inventory-save-btn:hover:not(:disabled) {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.inventory-save-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Multiple Photo Upload */
+.multi-photo-upload {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.multi-photo-upload:hover {
+  border-color: var(--primary);
+}
+
+.multi-photo-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.multi-photo-item {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: grab;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.multi-photo-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.multi-photo-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.multi-photo-item img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+}
+
+.multi-photo-item .delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.multi-photo-item .order-badge {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 10;
+}
+
+.multi-photo-upload.drag-over {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.photo-order-hint {
+  font-size: 12px;
+  color: var(--gray);
+  margin-top: 5px;
+  text-align: center;
+}
+
+/* Room Amenities */
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.amenity-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.amenity-item label {
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.amenities-modal-content {
+  max-width: 800px;
+}
+
+.amenities-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.amenity-badge {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Photo Carousel */
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.carousel-inner {
+  display: flex;
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.carousel-item {
+  min-width: 100%;
+  height: 100%;
+}
+
+.carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carousel-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.carousel-control.prev {
+  left: 10px;
+}
+
+.carousel-control.next {
+  right: 10px;
+}
+
+.carousel-indicators {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.carousel-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: none;
+  cursor: pointer;
+}
+
+.carousel-indicator.active {
+  background: white;
+}
+
+/* Convenience Fee Display */
+.convenience-fee-breakdown {
+  background: #f0f7ff;
+  border: 1px solid #d1e9ff;
+  border-radius: 6px;
+  padding: 10px;
+  margin: 8px 0;
+}
+
+.fee-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.fee-item.main {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.fee-item.sub {
+  color: #666;
+  font-size: 12px;
+  padding-left: 15px;
+}
+
+/* NEW: Simple comma-separated amenities display */
+.amenities-comma-list {
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  margin: 10px 0;
+}
+
+.amenities-comma-list p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #495057;
+}
+
+/* NEW: Auto carousel styles */
+.auto-carousel .carousel-inner {
+  animation: autoCarousel 20s infinite;
+}
+
+@keyframes autoCarousel {
+  0%, 20% { transform: translateX(0); }
+  25%, 45% { transform: translateX(-100%); }
+  50%, 70% { transform: translateX(-200%); }
+  75%, 95% { transform: translateX(-300%); }
+  100% { transform: translateX(0); }
+}
+
+/* NEW STYLES FOR DISABLED DATES */
+.disabled-date {
+  background-color: #f5f5f5 !important;
+  color: #999 !important;
+  cursor: not-allowed;
+}
+
+.disabled-date input {
+  background-color: #f5f5f5 !important;
+  color: #999 !important;
+  cursor: not-allowed;
+}
+
+.past-date-row {
+  background-color: #f9f9f9 !important;
+}
+
+.past-date-cell {
+  opacity: 0.6;
+}
+
+.past-date-label {
+  color: #999;
+  font-size: 10px;
+  font-style: italic;
+}
+/* Login Modal Styles */
+#loginModal .modal-content {
+    animation: modal-open 0.3s ease-out;
+}
+
+.login-demo-credentials {
+    background: var(--primary-light);
+    padding: 15px;
+    border-radius: 6px;
+    margin: 15px 0;
+    border-left: 4px solid var(--primary);
+}
+
+.login-demo-credentials h4 {
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.login-demo-credentials p {
+    font-size: 12px;
+    margin: 4px 0;
+    color: var(--dark);
+}
+</style>
+</head>
+<body>
+<div id="loginModal" class="modal" style="display: block;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: var(--primary-dark);">Kakkson Extranet</h2>
+            <p style="color: var(--gray);">Hotel Management System</p>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" placeholder="Enter demo email" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Enter demo password" required>
+            </div>            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+    </div>
+</div>
+<div id="toast-container"></div>
+
+<div class="container">
+    <header class="header">
+        <div class="logo">Kakkson Extranet</div>
+        <div class="nav-bar">
+            <button id="hotels-btn" class="nav-button active" onclick="switchTab('hotels')"><i class="fas fa-building"></i> Hotels</button>
+            <button id="rooms-btn" class="nav-button" onclick="switchTab('rooms')"><i class="fas fa-bed"></i> Rooms</button>
+            <button id="rates-btn" class="nav-button" onclick="switchTab('rates')"><i class="fas fa-dollar-sign"></i> Rates</button>
+            <button id="inventory-btn" class="nav-button" onclick="switchTab('inventory')"><i class="fas fa-boxes"></i> Inventory</button>
+            <button id="offers-btn" class="nav-button" onclick="switchTab('offers')"><i class="fas fa-tag"></i> Offers & Addons</button>
+            <button id="bookings-btn" class="nav-button" onclick="switchTab('bookings')"><i class="fas fa-receipt"></i> Bookings</button>
+        </div>
+    </header>
+<!-- Login Modal -->
+
+    <!-- HOTELS TAB -->
+    <div id="hotels-content" class="tab-content">
+        <h2 style="color: var(--primary-dark); margin-bottom: 20px;">Hotel Management</h2>
+        <button class="btn btn-primary" onclick="openModal('addHotelModal')"><i class="fas fa-plus"></i> Add New Hotel</button>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div class="stats-card">
+                <h3>Total Hotels</h3>
+                <div class="number" id="total-hotels">0</div>
+            </div>
+            <div class="stats-card">
+                <h3>Total Room Types</h3>
+                <div class="number" id="total-room-types">0</div>
+            </div>
+        </div>
+        
+        <div id="hotels-list">
+            <p style="margin-top: 20px; text-align: center; color: var(--gray);">Loading hotels...</p>
+        </div>
+    </div>
+
+    <!-- ROOMS TAB -->
+    <div id="rooms-content" class="tab-content" style="display: none;">
+        <h2 style="color: var(--primary-dark); margin-bottom: 20px;">Room Type Management</h2>
+        
+        <div class="form-group" style="max-width: 300px;">
+            <label for="rooms-hotel-select">Select Hotel:</label>
+            <select id="rooms-hotel-select" onchange="loadRoomsForHotel()">
+                <option value="">-- Select Hotel --</option>
+            </select>
+        </div>
+
+        <div id="rooms-controls" style="display: none;">
+            <button class="btn btn-primary" onclick="openRoomModal()"><i class="fas fa-plus"></i> Add New Room Type</button>
+            
+            <div style="margin: 20px 0; background: var(--light); padding: 15px; border-radius: 8px;">
+                <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Meal Plans</h3>
+                <div>
+                    <span class="meal-plan-badge">EP (Room Only)</span>
+                    <span class="meal-plan-badge">CP (Breakfast Included)</span>
+                </div>
+            </div>
+            
+            <div id="room-types-list">
+                <p style="margin-top: 20px; text-align: center; color: var(--gray);">Loading room types...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RATES TAB -->
+    <div id="rates-content" class="tab-content" style="display: none;">
+        <h2 style="color: var(--primary-dark); margin-bottom: 20px;">Rate Management</h2>
+        
+        <div class="form-group" style="max-width: 300px;">
+            <label for="rates-hotel-select">Select Hotel:</label>
+            <select id="rates-hotel-select" onchange="loadRatesForHotel()">
+                <option value="">-- Select Hotel --</option>
+            </select>
+        </div>
+
+        <div id="rates-controls" style="display: none;">
+            <div class="calendar-navigation">
+                <button onclick="navigateRatesCalendar(-7)"><i class="fas fa-chevron-left"></i></button>
+                <input type="date" id="rates-start-date" onchange="loadRatesForSelectedDate()">
+                <button onclick="navigateRatesCalendar(7)"><i class="fas fa-chevron-right"></i></button>
+                <span id="rates-date-range" style="margin-left: 15px; font-weight: 600;"></span>
+            </div>
+
+            <fieldset style="border: 1px solid #cfd8dc; padding: 20px; border-radius: 8px; margin: 15px 0 20px 0;">
+    <legend style="padding: 0 10px; font-weight: 600; color: var(--primary-dark);">Bulk Rate Update</legend>
+    <form id="bulkRateUpdateForm">
+        <!-- Update the bulk rate form grid -->
+<div class="grid-form">
+    <div class="form-group">
+        <label for="bulk-rate-start-date">Start Date *</label>
+        <input type="date" id="bulk-rate-start-date" required onchange="updateBulkDaysSelection('rate')">
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-end-date">End Date *</label>
+        <input type="date" id="bulk-rate-end-date" required onchange="updateBulkDaysSelection('rate')">
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-room-type">Room Type *</label>
+        <select id="bulk-rate-room-type" required>
+            <option value="">Select Room Type</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-single-ep">Single EP Rate</label>
+        <input type="number" id="bulk-rate-single-ep" min="0" step="1" placeholder="e.g., 1200">
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-single-cp">Single CP Rate</label>
+        <input type="number" id="bulk-rate-single-cp" min="0" step="1" placeholder="e.g., 1500">
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-ep">Double EP Rate</label>
+        <input type="number" id="bulk-rate-ep" min="0" step="1" placeholder="e.g., 1500">
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-cp">Double CP Rate</label>
+        <input type="number" id="bulk-rate-cp" min="0" step="1" placeholder="e.g., 1800">
+    </div>
+    <div class="form-group">
+        <label for="bulk-rate-extra-adult">Extra Person Rate</label>
+        <input type="number" id="bulk-rate-extra-adult" min="0" step="1" placeholder="e.g., 500">
+    </div>
+</div>
+        
+        <!-- Days Selection for Bulk Update -->
+        <div id="bulk-rate-days-selection" class="bulk-days-selection" style="display: none;">
+            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                <h4 style="margin: 0; color: var(--primary-dark);">Select Dates to Update:</h4>
+                <div>
+                    <button type="button" class="select-all-days" onclick="selectAllDays('rate')">
+                        Select All
+                    </button>
+                    <button type="button" class="select-all-days" onclick="deselectAllDays('rate')" style="margin-left: 8px; background: var(--gray);">
+                        Deselect All
+                    </button>
+                </div>
+            </div>
+            <div id="bulk-rate-days-grid" class="days-checkbox-grid">
+                <!-- Days will be populated here -->
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: var(--gray);">
+                <i class="fas fa-info-circle"></i> Past dates are disabled automatically
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="margin-top: 15px;">
+            <i class="fas fa-cloud-upload-alt"></i> Apply Bulk Rate Update
+        </button>
+    </form>
+</fieldset>
+
+            <h3 style="color: var(--primary-dark); margin-bottom: 15px;">Rate Grid (7 Days)</h3>
+            <div id="rates-table-container" class="table-container">
+                <p style="padding: 20px; text-align: center; color: var(--gray);">Select a hotel to view rates</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVENTORY TAB -->
+    <div id="inventory-content" class="tab-content" style="display: none;">
+        <h2 style="color: var(--primary-dark); margin-bottom: 20px;">Inventory Management</h2>
+        
+        <div class="form-group" style="max-width: 300px;">
+            <label for="inventory-hotel-select">Select Hotel:</label>
+            <select id="inventory-hotel-select" onchange="loadInventoryForHotel()">
+                <option value="">-- Select Hotel --</option>
+            </select>
+        </div>
+
+        <div id="inventory-controls" style="display: none;">
+            <div class="calendar-navigation">
+                <button onclick="navigateInventoryCalendar(-7)"><i class="fas fa-chevron-left"></i></button>
+                <input type="date" id="inventory-start-date" onchange="loadInventoryForSelectedDate()">
+                <button onclick="navigateInventoryCalendar(7)"><i class="fas fa-chevron-right"></i></button>
+                <span id="inventory-date-range" style="margin-left: 15px; font-weight: 600;"></span>
+            </div>
+
+            <fieldset style="border: 1px solid #cfd8dc; padding: 20px; border-radius: 8px; margin: 15px 0 20px 0;">
+                <legend style="padding: 0 10px; font-weight: 600; color: var(--primary-dark);">Bulk Inventory Update</legend>
+                <form id="bulkInventoryUpdateForm">
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label for="bulk-inventory-start-date">Start Date</label>
+                            <input type="date" id="bulk-inventory-start-date" required onchange="updateBulkDaysSelection('inventory')">
+                        </div>
+                        <div class="form-group">
+                            <label for="bulk-inventory-end-date">End Date</label>
+                            <input type="date" id="bulk-inventory-end-date" required onchange="updateBulkDaysSelection('inventory')">
+                        </div>
+                        <div class="form-group">
+                            <label for="bulk-inventory-room-type">Room Type</label>
+                            <select id="bulk-inventory-room-type" required>
+                                <option value="">Select Room Type</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bulk-inventory-rooms">Rooms Available</label>
+                            <input type="number" id="bulk-inventory-rooms" min="0" placeholder="e.g., 10" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Days Selection for Bulk Update -->
+                    <div id="bulk-inventory-days-selection" class="bulk-days-selection" style="display: none;">
+                        <h4>Select Days to Update:</h4>
+                        <div id="bulk-inventory-days-grid" class="days-checkbox-grid">
+                            <!-- Days will be populated here -->
+                        </div>
+                        <button type="button" class="select-all-days" onclick="selectAllDays('inventory')">
+                            Select All Days
+                        </button>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-cloud-upload-alt"></i> Apply Bulk Inventory Update</button>
+                </form>
+            </fieldset>
+
+            <h3 style="color: var(--primary-dark); margin-bottom: 15px;">Inventory Grid (7 Days)</h3>
+            <div id="inventory-table-container" class="table-container">
+                <p style="padding: 20px; text-align: center; color: var(--gray);">Select a hotel to view inventory</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- OFFERS & ADDONS TAB -->
+    <div id="offers-content" class="tab-content" style="display: none;">
+        <h2 style="color: var(--primary-dark); margin-bottom: 20px;">Offers & Addons Management</h2>
+        
+        <div class="form-group" style="max-width: 300px;">
+            <label for="offers-hotel-select">Select Hotel:</label>
+            <select id="offers-hotel-select" onchange="loadOffersForHotel()">
+                <option value="">-- Select Hotel --</option>
+            </select>
+        </div>
+
+        <div id="offers-controls" style="display: none;">
+            <button class="btn btn-primary" onclick="openOfferModal()"><i class="fas fa-plus"></i> Add New Offer</button>
+            <button class="btn btn-secondary" onclick="openAddonModal()"><i class="fas fa-plus"></i> Add New Addon</button>
+            
+            <div style="margin-top: 20px;">
+                <h3 style="color: var(--primary-dark); margin-bottom: 15px;">Active Offers</h3>
+                <div id="offers-list">
+                    <!-- Offers will be loaded here -->
+                </div>
+                
+                <h3 style="color: var(--primary-dark); margin: 30px 0 15px 0;">Available Addons</h3>
+                <div id="addons-list">
+                    <!-- Addons will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOOKINGS TAB -->
+    <div id="bookings-content" class="tab-content" style="display: none;">
+        <h2 style="color: var(--primary-dark); margin-bottom: 20px;">Booking Management</h2>
+        
+        <!-- Booking Filters -->
+        <div class="filter-section">
+            <h3>Filter Bookings</h3>
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label for="booking-hotel-filter">Hotel</label>
+                    <select id="booking-hotel-filter" onchange="applyBookingFilters()">
+                        <option value="">All Hotels</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="booking-checkin-filter">Check-in Date</label>
+                    <input type="date" id="booking-checkin-filter" onchange="applyBookingFilters()">
+                </div>
+                <div class="form-group">
+                    <label for="booking-checkout-filter">Check-out Date</label>
+                    <input type="date" id="booking-checkout-filter" onchange="applyBookingFilters()">
+                </div>
+                <div class="form-group">
+                    <label for="booking-date-filter">Booking Date</label>
+                    <input type="date" id="booking-date-filter" onchange="applyBookingFilters()">
+                </div>
+                <div class="form-group">
+                    <label for="booking-status-filter">Status</label>
+                    <select id="booking-status-filter" onchange="applyBookingFilters()">
+                        <option value="">All Status</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-secondary" onclick="clearBookingFilters()" style="margin-top: 24px;">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button class="btn btn-secondary" onclick="openManualBookingModal()"><i class="fas fa-plus"></i> Create Manual Booking</button>
+            <button class="btn btn-success excel-btn" onclick="exportBookingsToExcel()"><i class="fas fa-file-excel"></i> Export to Excel</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div class="stats-card">
+                <h3>Total Bookings</h3>
+                <div class="number" id="total-bookings">0</div>
+            </div>
+            <div class="stats-card">
+                <h3>Confirmed</h3>
+                <div class="number" id="confirmed-bookings">0</div>
+            </div>
+            <div class="stats-card">
+                <h3>Pending</h3>
+                <div class="number" id="pending-bookings">0</div>
+            </div>
+            <div class="stats-card">
+                <h3>Cancelled</h3>
+                <div class="number" id="cancelled-bookings">0</div>
+            </div>
+        </div>
+        
+        <div id="bookings-list">
+            <p style="margin-top: 20px; text-align: center; color: var(--gray);">Loading bookings...</p>
+        </div>
+    </div>
+</div>
+<!-- MODALS -->
+<!-- Update the addHotelModal and editHotelModal forms -->
+<div id="addHotelModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('addHotelModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;">Add New Hotel</h3>
+        <form id="addHotelForm">
+            <div class="form-group">
+                <label for="hotel-name">Hotel Name *</label>
+                <input type="text" id="hotel-name" required>
+            </div>
+            <div class="form-group">
+                <label for="hotel-location">Location *</label>
+                <input type="text" id="hotel-location" placeholder="e.g., New York, USA" required>
+            </div>
+            <div class="form-group">
+                <label for="hotel-description">Description</label>
+                <textarea id="hotel-description" rows="3" placeholder="Hotel description..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="hotel-tax-rate">Tax Rate (%)</label>
+                <input type="number" id="hotel-tax-rate" min="0" max="50" step="0.1" value="5.0" class="tax-rate-input">
+            </div>
+            
+            <!-- ✅ NEW: Payment Gateway Configuration -->
+            <div style="border: 2px solid #e0e0e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="color: var(--primary-dark); margin-bottom: 15px;">Payment Gateway Configuration</h4>
+                
+                <div class="form-group">
+                    <label for="active-payment-gateway">Active Payment Gateway</label>
+                    <select id="active-payment-gateway">
+                        <option value="upi">UPI QR Code Only</option>
+                        <option value="razorpay">Razorpay Online Payments</option>
+                    </select>
+                </div>
+                
+                <div id="razorpay-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="razorpay-key-id">Razorpay Key ID *</label>
+                        <input type="text" id="razorpay-key-id" placeholder="rzp_test_xxxxxxxxxxxx">
+                        <small>Get this from your Razorpay dashboard</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="razorpay-key-secret">Razorpay Key Secret *</label>
+                        <input type="password" id="razorpay-key-secret" placeholder="Your secret key">
+                        <small>Keep this secure. Get from Razorpay dashboard</small>
+                    </div>
+                </div>
+            </div>
+<!-- In addHotelModal and editHotelModal, add this after Payment Gateway Configuration: -->
+
+<div style="border: 2px solid #e0e0e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h4 style="color: var(--primary-dark); margin-bottom: 15px;">Hotel Contact Information</h4>
+    
+    <div class="form-group">
+        <label for="hotel-admin-email">Admin Email *</label>
+        <input type="email" id="hotel-admin-email" placeholder="admin@hotel.com" required>
+        <small>Booking vouchers will be sent to this email</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="hotel-contact-phone">Contact Phone</label>
+        <input type="tel" id="hotel-contact-phone" placeholder="+91XXXXXXXXXX">
+    </div>
+    
+    <div class="form-group">
+        <label for="hotel-address">Hotel Address</label>
+        <textarea id="hotel-address" rows="2" placeholder="Full hotel address"></textarea>
+    </div>
+</div>
+            <!-- Multiple Hotel Photos with Drag & Drop -->
+            <div class="form-group">
+                <label>Hotel Photos <span class="photo-order-hint">(Drag to reorder)</span></label>
+                <div class="multi-photo-upload" onclick="document.getElementById('hotel-photos-input').click()">
+                    <i class="fas fa-images fa-2x" style="color: var(--gray); margin-bottom: 10px;"></i>
+                    <p>Click to upload multiple hotel photos</p>
+                    <p class="photo-order-hint">You can drag photos to reorder them after upload</p>
+                    <input type="file" id="hotel-photos-input" accept="image/*" multiple style="display: none;" onchange="previewMultiplePhotos(event, 'hotel-photos-preview')">
+                </div>
+                <div id="hotel-photos-preview" class="multi-photo-preview"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="hotel-qr-code">UPI QR Code</label>
+                <div class="photo-upload-area" onclick="document.getElementById('hotel-qr-input').click()">
+                    <i class="fas fa-qrcode fa-2x" style="color: var(--gray); margin-bottom: 10px;"></i>
+                    <p>Click to upload UPI QR Code</p>
+                    <input type="file" id="hotel-qr-input" accept="image/*" style="display: none;" onchange="previewHotelQR(event)">
+                    <img id="hotel-qr-preview" class="photo-preview">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" onclick="closeModal('addHotelModal')" style="background: var(--gray); color: white;">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="save-hotel-btn">
+                    <i class="fas fa-save"></i> Save Hotel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Edit Hotel Modal with Payment Gateway Fields -->
+<!-- Edit Hotel Modal with Payment Gateway Fields -->
+<div id="editHotelModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('editHotelModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;">Edit Hotel</h3>
+        <form id="editHotelForm">
+            <input type="hidden" id="edit-hotel-id">
+            <div class="form-group">
+                <label for="edit-hotel-name">Hotel Name *</label>
+                <input type="text" id="edit-hotel-name" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-hotel-location">Location *</label>
+                <input type="text" id="edit-hotel-location" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-hotel-description">Description</label>
+                <textarea id="edit-hotel-description" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-hotel-tax-rate">Tax Rate (%)</label>
+                <input type="number" id="edit-hotel-tax-rate" min="0" max="50" step="0.1" class="tax-rate-input">
+            </div>
+            
+            <!-- ✅ PAYMENT GATEWAY CONFIGURATION SECTION FOR EDIT -->
+            <div style="border: 2px solid #e0e0e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="color: var(--primary-dark); margin-bottom: 15px;">Payment Gateway Configuration</h4>
+                
+                <div class="form-group">
+                    <label for="edit-active-payment-gateway">Active Payment Gateway</label>
+                    <select id="edit-active-payment-gateway" onchange="toggleEditRazorpayFields()">
+                        <option value="upi">UPI QR Code Only</option>
+                        <option value="razorpay">Razorpay Online Payments</option>
+                    </select>
+                </div>
+                
+                <div id="edit-razorpay-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="edit-razorpay-key-id">Razorpay Key ID</label>
+                        <input type="text" id="edit-razorpay-key-id" placeholder="rzp_test_xxxxxxxxxxxx">
+                        <small style="color: var(--gray); font-size: 12px;">Get this from your Razorpay dashboard</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-razorpay-key-secret">Razorpay Key Secret</label>
+                        <input type="password" id="edit-razorpay-key-secret" placeholder="Your secret key">
+                        <small style="color: var(--gray); font-size: 12px;">Keep this secure. Get from Razorpay dashboard</small>
+                    </div>
+                </div>
+            </div>
+<!-- In addHotelModal and editHotelModal, add this after Payment Gateway Configuration: -->
+
+<div style="border: 2px solid #e0e0e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h4 style="color: var(--primary-dark); margin-bottom: 15px;">Hotel Contact Information</h4>
+    
+    <div class="form-group">
+        <label for="hotel-admin-email">Admin Email *</label>
+        <input type="email" id="hotel-admin-email" placeholder="admin@hotel.com" required>
+        <small>Booking vouchers will be sent to this email</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="hotel-contact-phone">Contact Phone</label>
+        <input type="tel" id="hotel-contact-phone" placeholder="+91XXXXXXXXXX">
+    </div>
+    
+    <div class="form-group">
+        <label for="hotel-address">Hotel Address</label>
+        <textarea id="hotel-address" rows="2" placeholder="Full hotel address"></textarea>
+    </div>
+</div>
+            <!-- Multiple Hotel Photos in Edit with Drag & Drop -->
+            <div class="form-group">
+                <label>Hotel Photos <span class="photo-order-hint">(Drag to reorder)</span></label>
+                <div class="multi-photo-upload" onclick="document.getElementById('edit-hotel-photos-input').click()">
+                    <i class="fas fa-images fa-2x" style="color: var(--gray); margin-bottom: 10px;"></i>
+                    <p>Click to upload additional hotel photos</p>
+                    <p class="photo-order-hint">Drag photos to reorder them</p>
+                    <input type="file" id="edit-hotel-photos-input" accept="image/*" multiple style="display: none;" onchange="previewMultiplePhotos(event, 'edit-hotel-photos-preview')">
+                </div>
+                <div id="edit-hotel-photos-preview" class="multi-photo-preview"></div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" onclick="closeModal('editHotelModal')" style="background: var(--gray); color: white;">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Hotel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>>
+</div>
+
+<div id="roomModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('roomModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;" id="room-modal-title">Add New Room Type</h3>
+        <form id="roomForm">
+            <input type="hidden" id="room-edit-index">
+            <div class="form-group">
+                <label for="room-type-name">Room Type Name *</label>
+                <input type="text" id="room-type-name" placeholder="e.g., Deluxe, Suite" required>
+            </div>
+            <div class="form-group">
+                <label for="room-base-price">Base Price (EP) *</label>
+                <input type="number" id="room-base-price" min="0" step="1" placeholder="e.g., 1500" required>
+            </div>
+            <div class="form-group">
+                <label for="room-cp-price">CP Price (Breakfast Included)</label>
+                <input type="number" id="room-cp-price" min="0" step="1" placeholder="e.g., 1800">
+            </div>
+            <div class="room-occupancy-grid">
+                <div class="form-group">
+                    <label for="room-max-adults">Max Adults *</label>
+                    <input type="number" id="room-max-adults" min="1" value="2" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-max-occupants">Max Occupants *</label>
+                    <input type="number" id="room-max-occupants" min="1" value="2" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-child-min-age">Child Min Age</label>
+                    <input type="number" id="room-child-min-age" min="0" value="5" placeholder="e.g., 5">
+                </div>
+                <div class="form-group">
+                    <label for="room-child-max-age">Child Max Age</label>
+                    <input type="number" id="room-child-max-age" min="0" value="12" placeholder="e.g., 12">
+                </div>
+            </div>
+            
+            <!-- Room Amenities - SIMPLE COMMA SEPARATED INPUT -->
+            <div class="form-group">
+                <label for="room-amenities">Room Amenities</label>
+                <textarea id="room-amenities" rows="3" placeholder="Enter amenities separated by commas, e.g., Free WiFi, Air Conditioning, LED TV, Mini Bar"></textarea>
+                <small>Enter amenities separated by commas</small>
+            </div>
+            
+            <!-- Multiple Room Photos with Drag & Drop -->
+            <div class="form-group">
+                <label>Room Photos <span class="photo-order-hint">(Drag to reorder)</span></label>
+                <div class="multi-photo-upload" onclick="document.getElementById('room-photos-input').click()">
+                    <i class="fas fa-images fa-2x" style="color: var(--gray); margin-bottom: 10px;"></i>
+                    <p>Click to upload multiple room photos</p>
+                    <p class="photo-order-hint">Drag photos to reorder them</p>
+                    <input type="file" id="room-photos-input" accept="image/*" multiple style="display: none;" onchange="previewMultiplePhotos(event, 'room-photos-preview')">
+                </div>
+                <div id="room-photos-preview" class="multi-photo-preview"></div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" onclick="closeModal('roomModal')" style="background: var(--gray); color: white;">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="save-room-btn">
+                    <i class="fas fa-save"></i> Save Room Type
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Amenities Modal -->
+<div id="amenitiesModal" class="modal">
+    <div class="modal-content amenities-modal-content">
+        <span class="close-btn" onclick="closeModal('amenitiesModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;">Room Amenities</h3>
+        <div id="amenities-display" class="amenities-comma-list">
+            <!-- Amenities will be displayed here as comma separated -->
+        </div>
+    </div>
+</div>
+
+<!-- Photo Carousel Modal -->
+<div id="photoCarouselModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <span class="close-btn" onclick="closeModal('photoCarouselModal')">&times;</span>
+        <div class="carousel auto-carousel">
+            <div class="carousel-inner" id="carousel-inner">
+                <!-- Carousel items will be added here -->
+            </div>
+            <button class="carousel-control prev" onclick="navigateCarousel(-1)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-control next" onclick="navigateCarousel(1)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="carousel-indicators" id="carousel-indicators">
+                <!-- Indicators will be added here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Booking Modal -->
+<div id="manualBookingModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <span class="close-btn" onclick="closeModal('manualBookingModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;">Create Manual Booking</h3>
+        <form id="manualBookingForm">
+            <div class="grid-form">
+                <div class="form-group">
+                    <label for="manual-hotel">Hotel *</label>
+                    <select id="manual-hotel" required>
+                        <option value="">Select Hotel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="manual-room-type">Room Type *</label>
+                    <select id="manual-room-type" required>
+                        <option value="">Select Room Type</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="manual-checkin">Check-in Date *</label>
+                    <input type="date" id="manual-checkin" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-checkout">Check-out Date *</label>
+                    <input type="date" id="manual-checkout" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-adults">Adults *</label>
+                    <input type="number" id="manual-adults" min="1" value="2" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-children">Children</label>
+                    <input type="number" id="manual-children" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="manual-rooms">Rooms *</label>
+                    <input type="number" id="manual-rooms" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-meal-plan">Meal Plan</label>
+                    <select id="manual-meal-plan">
+                        <option value="ep">EP (Room Only)</option>
+                        <option value="cp">CP (Breakfast Included)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="manual-guest-name">Guest Name *</label>
+                <input type="text" id="manual-guest-name" required>
+            </div>
+            <div class="form-group">
+                <label for="manual-guest-email">Guest Email *</label>
+                <input type="email" id="manual-guest-email" required>
+            </div>
+            <div class="form-group">
+                <label for="manual-guest-phone">Guest Phone</label>
+                <input type="tel" id="manual-guest-phone">
+            </div>
+            <div class="form-group">
+                <label for="manual-total-amount">Total Amount *</label>
+                <input type="number" id="manual-total-amount" min="0" step="0.01" required>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" onclick="closeModal('manualBookingModal')" style="background: var(--gray); color: white;">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Create Booking
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Offer Modal -->
+<div id="offerModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('offerModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;" id="offer-modal-title">Add New Offer</h3>
+        <form id="offerForm">
+            <input type="hidden" id="offer-edit-index">
+            <div class="form-group">
+                <label for="offer-name">Offer Name *</label>
+                <input type="text" id="offer-name" placeholder="e.g., Early Bird Discount" required>
+            </div>
+            <div class="form-group">
+                <label for="offer-description">Description</label>
+                <textarea id="offer-description" rows="3" placeholder="Offer description..."></textarea>
+            </div>
+            <div class="grid-form">
+                <div class="form-group">
+                    <label for="offer-type">Offer Type *</label>
+                    <select id="offer-type" required>
+                        <option value="percentage">Percentage Discount</option>
+                        <option value="fixed">Fixed Amount Discount</option>
+                        <option value="free_night">Free Night</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="offer-value">Value *</label>
+                    <input type="number" id="offer-value" min="0" step="0.01" placeholder="e.g., 10" required>
+                </div>
+                <div class="form-group">
+                    <label for="offer-start-date">Start Date</label>
+                    <input type="date" id="offer-start-date">
+                </div>
+                <div class="form-group">
+                    <label for="offer-end-date">End Date</label>
+                    <input type="date" id="offer-end-date">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="offer-room-types">Applicable Room Types</label>
+                <select id="offer-room-types" multiple style="height: 100px;">
+                    <!-- Room types will be populated dynamically -->
+                </select>
+                <small>Hold Ctrl to select multiple room types</small>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" onclick="closeModal('offerModal')" style="background: var(--gray); color: white;">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Offer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Addon Modal -->
+<div id="addonModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('addonModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;">Add New Addon</h3>
+        <form id="addonForm">
+            <input type="hidden" id="addon-edit-index">
+            <div class="form-group">
+                <label for="addon-name">Addon Name *</label>
+                <input type="text" id="addon-name" placeholder="e.g., Airport Transfer" required>
+            </div>
+            <div class="form-group">
+                <label for="addon-description">Description</label>
+                <textarea id="addon-description" rows="3" placeholder="Addon description..."></textarea>
+            </div>
+            <div class="grid-form">
+                <div class="form-group">
+                    <label for="addon-price">Price *</label>
+                    <input type="number" id="addon-price" min="0" step="0.01" placeholder="e.g., 500" required>
+                </div>
+                <div class="form-group">
+                    <label for="addon-type">Price Type</label>
+                    <select id="addon-type">
+                        <option value="per_booking">Per Booking</option>
+                        <option value="per_night">Per Night</option>
+                        <option value="per_person">Per Person</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" onclick="closeModal('addonModal')" style="background: var(--gray); color: white;">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Addon
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Voucher Modal -->
+<div id="voucherModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <span class="close-btn" onclick="closeModal('voucherModal')">&times;</span>
+        <h3 style="color: var(--primary-dark); margin-bottom: 20px;">Booking Voucher</h3>
+        <div id="voucher-content" style="background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <!-- Voucher content will be injected here -->
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="printVoucher()">
+                <i class="fas fa-print"></i> Print Voucher
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-content">
+        <p class="footer-text">
+            &copy; 2025 Kakkson Extranet - Hotel Management System. 
+            <strong>Developed by SYSTEMS SOLUTION</strong>
+        </p>
+    </div>
+</footer>
+
+
+<script>
+// ========== PART 2: JAVASCRIPT ==========
+// Supabase Configuration
+const { createClient } = supabase;
+const SUPABASE_URL = 'https://ctpgmhixlaxnhhrnkazz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0cGdtaGl4bGF4bmhocm5rYXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNTcwNDMsImV4cCI6MjA3NDYzMzA0M30.AI2UMryv-Whu2wVpQ8JeLWVThLVQhsJSero6bzgn8oA';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let hotels = [];
+let bookings = [];
+let currentRatesHotel = null;
+let currentInventoryHotel = null;
+let currentRoomsHotel = null;
+let currentOffersHotel = null;
+let pendingRateChanges = new Map();
+let pendingInventoryChanges = new Map();
+let ratesStartDate = new Date();
+let inventoryStartDate = new Date();
+let currentCarouselPhotos = [];
+let currentCarouselIndex = 0;
+
+// ========== UTILITY FUNCTIONS ==========
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast-message toast-${type}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
+}
+
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function setLoading(button, isLoading) {
+    if (!button) {
+        console.error('Button not found for loading state');
+        return;
+    }
+    
+    if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = '<span class="loading"></span> Loading...';
+    } else {
+        button.disabled = false;
+        if (button.id === 'save-hotel-btn') {
+            button.innerHTML = '<i class="fas fa-save"></i> Save Hotel';
+        } else if (button.id === 'save-room-btn') {
+            button.innerHTML = '<i class="fas fa-save"></i> Save Room Type';
+        } else {
+            // Default case
+            button.innerHTML = button.getAttribute('data-original-text') || '<i class="fas fa-save"></i> Save';
+        }
+    }
+}
+
+function getDatesBetween(startStr, endStr) {
+    const dates = [];
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    
+    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        dates.push(new Date(date).toISOString().split('T')[0]);
+    }
+    return dates;
+}
+
+function formatDateForDisplay(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+function getNext7Days(startDate) {
+    const dates = [];
+    const start = new Date(startDate);
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+}
+
+function formatDateRange(startDate) {
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return `${formatDateForDisplay(startDate)} - ${formatDateForDisplay(end.toISOString().split('T')[0])}`;
+}
+
+function isPastDate(dateStr) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateStr);
+    return date < today;
+}
+
+// ========== PHOTO MANAGEMENT FUNCTIONS ==========
+
+let currentDraggedItem = null;
+
+function previewMultiplePhotos(event, previewContainerId) {
+    const files = event.target.files;
+    const previewContainer = document.getElementById(previewContainerId);
+    
+    for (let file of files) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const photoItem = createPhotoItem(e.target.result, file.name, previewContainerId);
+            previewContainer.appendChild(photoItem);
+            updatePhotoOrder(previewContainer);
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    event.target.value = '';
+}
+
+function createPhotoItem(imageSrc, fileName, containerType) {
+    const photoItem = document.createElement('div');
+    photoItem.className = 'multi-photo-item';
+    photoItem.draggable = true;
+    
+    photoItem.setAttribute('data-image-src', imageSrc);
+    photoItem.setAttribute('data-file-name', fileName);
+    
+    const photoCount = document.getElementById(containerType).children.length + 1;
+    
+    photoItem.innerHTML = `
+        <img src="${imageSrc}" alt="Uploaded photo">
+        <button type="button" class="delete-btn" onclick="removePhotoItem(this)">×</button>
+        <div class="order-badge">${photoCount}</div>
+    `;
+    
+    photoItem.addEventListener('dragstart', handleDragStart);
+    photoItem.addEventListener('dragover', handleDragOver);
+    photoItem.addEventListener('dragenter', handleDragEnter);
+    photoItem.addEventListener('dragleave', handleDragLeave);
+    photoItem.addEventListener('drop', handleDrop);
+    photoItem.addEventListener('dragend', handleDragEnd);
+    
+    return photoItem;
+}
+
+function handleDragStart(e) {
+    currentDraggedItem = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.outerHTML);
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (currentDraggedItem !== this) {
+        const previewContainer = this.parentElement;
+        const draggingItem = currentDraggedItem;
+        const afterElement = getDragAfterElement(previewContainer, e.clientY);
+        
+        if (afterElement) {
+            previewContainer.insertBefore(draggingItem, afterElement);
+        } else {
+            previewContainer.appendChild(draggingItem);
+        }
+        
+        updatePhotoOrder(previewContainer);
+    }
+    
+    this.classList.remove('drag-over');
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    document.querySelectorAll('.multi-photo-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    currentDraggedItem = null;
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.multi-photo-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updatePhotoOrder(previewContainer) {
+    const photoItems = previewContainer.querySelectorAll('.multi-photo-item');
+    
+    photoItems.forEach((item, index) => {
+        const badge = item.querySelector('.order-badge');
+        if (badge) {
+            badge.textContent = index + 1;
+        }
+    });
+}
+
+function removePhotoItem(deleteButton) {
+    const photoItem = deleteButton.parentElement;
+    const previewContainer = photoItem.parentElement;
+    
+    if (confirm('Remove this photo?')) {
+        photoItem.remove();
+        updatePhotoOrder(previewContainer);
+    }
+}
+
+function getOrderedPhotoUrls(previewContainerId) {
+    const previewContainer = document.getElementById(previewContainerId);
+    const photoItems = previewContainer.querySelectorAll('.multi-photo-item');
+    const orderedUrls = [];
+    
+    photoItems.forEach(item => {
+        const img = item.querySelector('img');
+        if (img && img.src) {
+            orderedUrls.push(img.src);
+        }
+    });
+    
+    return orderedUrls;
+}
+
+// ========== PHOTO CAROUSEL FUNCTIONS ==========
+
+function openPhotoCarousel(photos) {
+    if (!photos || photos.length === 0) {
+        showToast('No photos available', 'warning');
+        return;
+    }
+    
+    currentCarouselPhotos = photos;
+    currentCarouselIndex = 0;
+    
+    const carouselInner = document.getElementById('carousel-inner');
+    const carouselIndicators = document.getElementById('carousel-indicators');
+    
+    carouselInner.innerHTML = '';
+    carouselIndicators.innerHTML = '';
+    
+    photos.forEach((photo, index) => {
+        const carouselItem = document.createElement('div');
+        carouselItem.className = 'carousel-item';
+        carouselItem.innerHTML = `<img src="${photo}" alt="Photo ${index + 1}">`;
+        carouselInner.appendChild(carouselItem);
+        
+        const indicator = document.createElement('button');
+        indicator.className = `carousel-indicator ${index === 0 ? 'active' : ''}`;
+        indicator.onclick = () => goToSlide(index);
+        carouselIndicators.appendChild(indicator);
+    });
+    
+    updateCarousel();
+    openModal('photoCarouselModal');
+}
+
+function navigateCarousel(direction) {
+    currentCarouselIndex += direction;
+    
+    if (currentCarouselIndex < 0) {
+        currentCarouselIndex = currentCarouselPhotos.length - 1;
+    } else if (currentCarouselIndex >= currentCarouselPhotos.length) {
+        currentCarouselIndex = 0;
+    }
+    
+    updateCarousel();
+}
+
+function goToSlide(index) {
+    currentCarouselIndex = index;
+    updateCarousel();
+}
+
+function updateCarousel() {
+    const carouselInner = document.getElementById('carousel-inner');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+    
+    carouselInner.style.transform = `translateX(-${currentCarouselIndex * 100}%)`;
+    
+    indicators.forEach((indicator, index) => {
+        indicator.classList.toggle('active', index === currentCarouselIndex);
+    });
+}
+
+// ========== NAVIGATION ==========
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+    document.querySelectorAll('.nav-button').forEach(button => button.classList.remove('active'));
+    
+    document.getElementById(tabId + '-content').style.display = 'block';
+    document.getElementById(tabId + '-btn').classList.add('active');
+
+    switch (tabId) {
+        case 'hotels': renderHotels(); break;
+        case 'rooms': 
+            populateHotelSelect('rooms-hotel-select');
+            break;
+        case 'rates': 
+            populateHotelSelect('rates-hotel-select');
+            break;
+        case 'inventory': 
+            populateHotelSelect('inventory-hotel-select');
+            break;
+        case 'offers':
+            populateHotelSelect('offers-hotel-select');
+            break;
+        case 'bookings': 
+            populateBookingFilters();
+            renderBookings(); 
+            break;
+    }
+}
+
+// ========== DATA MANAGER ==========
+
+class DataManager {
+    constructor() {
+        if (DataManager.instance) return DataManager.instance;
+        DataManager.instance = this;
+    }
+
+    async init() {
+        try {
+            showToast("Loading data from Supabase...", 'info');
+            await this.getHotels();
+            await this.getBookings();
+            this.subscribeToChanges();
+            showToast("Data loaded successfully!", 'success');
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showToast('Failed to initialize application', 'error');
+        }
+    }
+
+    subscribeToChanges() {
+        supabaseClient.channel('hotels_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'hotels' }, 
+                async () => await this.getHotels())
+            .subscribe();
+
+        supabaseClient.channel('bookings_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, 
+                async () => await this.getBookings())
+            .subscribe();
+    }
+
+    async getHotels() {
+        try {
+            const { data, error } = await supabaseClient.from('hotels').select('*').order('name');
+            
+            if (error) {
+                console.error('Error fetching hotels:', error);
+                showToast('Error loading hotels', 'error');
+                hotels = [];
+                return [];
+            }
+
+            hotels = data.map(h => ({ 
+                ...h, 
+                docId: h.id,
+                roomTypes: h.room_types || [],
+                roomDetails: h.room_details || {},
+                inventory: h.inventory || {},
+                rates: h.rates || {},
+                offers: h.offers || [],
+                addons: h.addons || [],
+                photos: h.photos || [],
+                logo: h.logo || '',
+                qr_code: h.qr_code || '',
+                tax_rate: h.tax_rate || 5.0,
+                active_payment_gateway: h.active_payment_gateway || 'upi',
+                razorpay_key_id: h.razorpay_key_id || '',
+                razorpay_key_secret: h.razorpay_key_secret || ''
+            }));
+            
+            document.getElementById('total-hotels').textContent = hotels.length;
+            const totalRoomTypes = hotels.reduce((sum, hotel) => sum + (hotel.roomTypes?.length || 0), 0);
+            document.getElementById('total-room-types').textContent = totalRoomTypes;
+            
+            return hotels;
+        } catch (error) {
+            console.error('Error in getHotels:', error);
+            hotels = [];
+            return [];
+        }
+    }
+
+    async getBookings() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Supabase error:', error);
+                showToast('Error loading bookings', 'error');
+                bookings = [];
+                return [];
+            }
+
+            if (!data || data.length === 0) {
+                bookings = [];
+                updateBookingStats([]);
+                return [];
+            }
+
+            bookings = data;
+            updateBookingStats(bookings);
+            
+            return bookings;
+        } catch (error) {
+            console.error('Exception:', error);
+            bookings = [];
+            return [];
+        }
+    }
+
+    async uploadImage(file, bucketName, fileName) {
+        try {
+            const { data, error } = await supabaseClient.storage
+                .from(bucketName)
+                .upload(fileName, file);
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabaseClient.storage
+                .from(bucketName)
+                .getPublicUrl(fileName);
+
+            return publicUrl;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
+        }
+    }
+
+    async saveHotel(hotel, isNew = true) {
+        try {
+            // Upload new photos if exist
+            if (hotel.photoFiles && hotel.photoFiles.length > 0) {
+                const uploadedPhotos = [];
+                for (let i = 0; i < hotel.photoFiles.length; i++) {
+                    const photoName = `photo_${Date.now()}_${i}_${hotel.photoFiles[i].name}`;
+                    const photoUrl = await this.uploadImage(
+                        hotel.photoFiles[i], 
+                        'hotel-photos', 
+                        photoName
+                    );
+                    uploadedPhotos.push(photoUrl);
+                }
+                
+                const existingPhotos = hotel.photos ? 
+                    (Array.isArray(hotel.photos) ? hotel.photos : Object.values(hotel.photos)) : 
+                    [];
+                
+                hotel.photos = [...existingPhotos, ...uploadedPhotos];
+            }
+
+            // Upload QR code if exists
+            if (hotel.qrFile) {
+                const qrName = `qr_${Date.now()}_${hotel.qrFile.name}`;
+                hotel.qr_code = await this.uploadImage(hotel.qrFile, 'hotel-qrcodes', qrName);
+            }
+
+            // In the saveHotel method, add the new fields:
+const hotelData = {
+            name: hotel.name,
+            location: hotel.location,
+            description: hotel.description,
+            // ✅ ADD THESE FIELDS:
+            admin_email: hotel.admin_email || '',
+            contact_phone: hotel.contact_phone || '',
+            address: hotel.address || '',
+            // Existing fields...
+            tax_rate: parseFloat(hotel.tax_rate) || 5.0,
+            active_payment_gateway: hotel.active_payment_gateway || 'upi',
+            razorpay_key_id: hotel.razorpay_key_id || '',
+            razorpay_key_secret: hotel.razorpay_key_secret || '',
+            room_types: hotel.roomTypes,
+            room_details: hotel.roomDetails,
+            inventory: hotel.inventory,
+            rates: hotel.rates,
+            offers: hotel.offers,
+            addons: hotel.addons,
+            photos: hotel.photos,
+            logo: hotel.logo,
+            qr_code: hotel.qr_code
+        };
+
+            if (isNew) {
+                const { data, error } = await supabaseClient
+                    .from('hotels')
+                    .insert([hotelData])
+                    .select();
+                if (error) throw error;
+                return data[0];
+            } else {
+                const { error } = await supabaseClient
+                    .from('hotels')
+                    .update(hotelData)
+                    .eq('id', hotel.docId);
+                if (error) throw error;
+                return hotel;
+            }
+        } catch (error) {
+            console.error('Error saving hotel:', error);
+            throw error;
+        }
+    }
+
+    async deleteHotel(hotelId) {
+        const { error } = await supabaseClient
+            .from('hotels')
+            .delete()
+            .eq('id', hotelId);
+        if (error) throw error;
+    }
+
+    async createBooking(bookingData) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .insert([bookingData])
+                .select();
+            if (error) throw error;
+            return data[0];
+        } catch (error) {
+            console.error('Error creating booking:', error);
+            throw error;
+        }
+    }
+
+    async updateHotelInventory(hotelId, inventoryData) {
+        try {
+            const { error } = await supabaseClient
+                .from('hotels')
+                .update({ inventory: inventoryData })
+                .eq('id', hotelId);
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error updating inventory:', error);
+            throw error;
+        }
+    }
+}
+
+const dataManager = new DataManager();
+
+// ========== HOTEL MANAGEMENT ==========
+
+function renderHotels() {
+    const container = document.getElementById('hotels-list');
+    
+    if (hotels.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 40px; color: var(--gray);">No hotels found. Add your first hotel to get started.</p>';
+        return;
+    }
+
+    let html = '<table class="data-table"><thead><tr><th>Hotel Name</th><th>Location</th><th>Tax Rate</th><th>Room Types</th><th>Photos</th><th>Actions</th></tr></thead><tbody>';
+    
+    hotels.forEach(hotel => {
+        const photoCount = hotel.photos ? hotel.photos.length : 0;
+        const photosHtml = photoCount > 0 ? 
+            `<button class="btn btn-sm" onclick="openPhotoCarousel(${JSON.stringify(hotel.photos)})">
+                <i class="fas fa-images"></i> ${photoCount} Photos
+            </button>` : 
+            '<i class="fas fa-image" style="color: var(--gray);"></i>';
+            
+        html += `<tr>
+            <td><strong>${hotel.name}</strong></td>
+            <td>${hotel.location}</td>
+            <td>${hotel.tax_rate || 5}%</td>
+            <td>${hotel.roomTypes?.join(', ') || 'No room types'}</td>
+            <td>${photosHtml}</td>
+            <td>
+                <button class="btn btn-primary" onclick="editHotel('${hotel.docId}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-error" onclick="deleteHotel('${hotel.docId}')">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    
+    populateHotelSelect('rates-hotel-select');
+    populateHotelSelect('inventory-hotel-select');
+    populateHotelSelect('rooms-hotel-select');
+    populateHotelSelect('offers-hotel-select');
+    populateHotelSelect('manual-hotel');
+}
+
+function populateHotelSelect(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">-- Select Hotel --</option>';
+    
+    hotels.forEach(hotel => {
+        const option = document.createElement('option');
+        option.value = hotel.name;
+        option.textContent = hotel.name;
+        select.appendChild(option);
+    });
+
+    if (currentValue && hotels.some(h => h.name === currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+function editHotel(hotelId) {
+    const hotel = hotels.find(h => h.docId === hotelId);
+    if (!hotel) return;
+
+    document.getElementById('edit-hotel-id').value = hotelId;
+    document.getElementById('edit-hotel-name').value = hotel.name;
+    document.getElementById('edit-hotel-location').value = hotel.location;
+    document.getElementById('edit-hotel-description').value = hotel.description || '';
+    document.getElementById('edit-hotel-tax-rate').value = hotel.tax_rate || 5.0;
+    document.getElementById('edit-hotel-admin-email').value = hotel.admin_email || '';
+
+    const photosPreview = document.getElementById('edit-hotel-photos-preview');
+    photosPreview.innerHTML = '';
+    
+    if (hotel.photos && hotel.photos.length > 0) {
+        const photosArray = Array.isArray(hotel.photos) ? hotel.photos : Object.values(hotel.photos);
+        
+        photosArray.forEach((photo, index) => {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'multi-photo-item';
+            photoItem.draggable = true;
+            photoItem.setAttribute('data-photo-url', photo);
+            photoItem.innerHTML = `
+                <img src="${photo}" alt="Hotel photo">
+                <button class="delete-btn" onclick="removeHotelPhoto('${hotelId}', '${photo}')">×</button>
+                <div class="order-badge">${index + 1}</div>
+            `;
+            
+            photoItem.addEventListener('dragstart', handleDragStart);
+            photoItem.addEventListener('dragover', handleDragOver);
+            photoItem.addEventListener('dragenter', handleDragEnter);
+            photoItem.addEventListener('dragleave', handleDragLeave);
+            photoItem.addEventListener('drop', handleDrop);
+            photoItem.addEventListener('dragend', handleDragEnd);
+            
+            photosPreview.appendChild(photoItem);
+        });
+    }
+
+    // REMOVED the QR code preview part since it doesn't exist in HTML
+
+    openModal('editHotelModal');
+}
+
+async function removeHotelPhoto(hotelId, photoUrl) {
+    if (!confirm('Remove this photo?')) return;
+    
+    const hotel = hotels.find(h => h.docId === hotelId);
+    if (hotel && hotel.photos) {
+        hotel.photos = hotel.photos.filter(photo => photo !== photoUrl);
+        
+        try {
+            await dataManager.saveHotel(hotel, false);
+            showToast('Photo removed', 'success');
+            
+            const photosPreview = document.getElementById('edit-hotel-photos-preview');
+            const photoItem = photosPreview.querySelector(`[data-photo-url="${photoUrl}"]`);
+            if (photoItem) {
+                photoItem.remove();
+                updatePhotoOrder(photosPreview);
+            }
+            
+        } catch (error) {
+            console.error('Error removing photo:', error);
+            showToast('Failed to remove photo', 'error');
+        }
+    }
+}
+
+async function deleteHotel(hotelId) {
+    if (!confirm('Are you sure you want to delete this hotel?')) return;
+    
+    try {
+        await dataManager.deleteHotel(hotelId);
+        showToast('Hotel deleted successfully', 'success');
+    } catch (error) {
+        console.error('Error deleting hotel:', error);
+        showToast('Failed to delete hotel', 'error');
+    }
+}
+
+// ========== FORM HANDLERS ==========
+
+document.getElementById('addHotelForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('hotel-name').value.trim();
+    const location = document.getElementById('hotel-location').value.trim();
+    const description = document.getElementById('hotel-description').value.trim();
+    const taxRate = parseFloat(document.getElementById('hotel-tax-rate').value) || 5.0;
+    const activePaymentGateway = document.getElementById('active-payment-gateway').value;
+    const razorpayKeyId = document.getElementById('razorpay-key-id').value.trim();
+    const razorpayKeySecret = document.getElementById('razorpay-key-secret').value.trim();
+    const adminEmail = document.getElementById('hotel-admin-email').value.trim();
+    
+    if (!name || !location) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    // Validate Razorpay fields if selected
+    if (activePaymentGateway === 'razorpay' && (!razorpayKeyId || !razorpayKeySecret)) {
+        showToast('Please fill in Razorpay API keys', 'error');
+        return;
+    }
+    
+    try {
+        // ✅ FIX: Get the save button properly
+        const saveButton = document.getElementById('save-hotel-btn');
+        setLoading(saveButton, true);
+        
+        const orderedPhotoUrls = getOrderedPhotoUrls('hotel-photos-preview');
+        
+        const newHotel = {
+            name: name,
+            location: location,
+            description: description,
+            tax_rate: taxRate,
+            active_payment_gateway: activePaymentGateway,
+            razorpay_key_id: razorpayKeyId,
+            razorpay_key_secret: razorpayKeySecret,
+            admin_email: adminEmail,
+            room_types: [],
+            room_details: {},
+            inventory: {},
+            rates: {},
+            offers: [],
+            addons: [],
+            photos: orderedPhotoUrls,
+            qr_code: '',
+            logo: ''
+        };
+        
+        await dataManager.saveHotel(newHotel, true);
+        
+        showToast('Hotel added successfully!', 'success');
+        closeModal('addHotelModal');
+        this.reset();
+        
+        // Reset payment gateway fields
+        document.getElementById('razorpay-fields').style.display = 'none';
+        document.getElementById('active-payment-gateway').value = 'upi';
+        
+    } catch (error) {
+        console.error('Error adding hotel:', error);
+        showToast('Failed to add hotel: ' + error.message, 'error');
+    } finally {
+        // ✅ FIX: Get the save button again in finally block
+        const saveButton = document.getElementById('save-hotel-btn');
+        setLoading(saveButton, false);
+    }
+});
+document.getElementById('editHotelForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const hotelId = document.getElementById('edit-hotel-id').value;
+    const hotel = hotels.find(h => h.docId === hotelId);
+    const hotel.admin_email = document.getElementById('edit-hotel-admin-email').value.trim();
+    
+    if (!hotel) {
+        showToast('Hotel not found', 'error');
+        return;
+    }
+    
+    hotel.name = document.getElementById('edit-hotel-name').value.trim();
+    hotel.location = document.getElementById('edit-hotel-location').value.trim();
+    hotel.description = document.getElementById('edit-hotel-description').value.trim();
+    hotel.tax_rate = parseFloat(document.getElementById('edit-hotel-tax-rate').value) || 5.0;
+    
+    const existingOrderedPhotos = getOrderedPhotoUrls('edit-hotel-photos-preview');
+    
+    const newPhotoFiles = Array.from(document.getElementById('edit-hotel-photos-input').files);
+    let newUploadedPhotos = [];
+    
+    if (newPhotoFiles.length > 0) {
+        try {
+            for (let i = 0; i < newPhotoFiles.length; i++) {
+                const photoName = `photo_${Date.now()}_${i}_${newPhotoFiles[i].name}`;
+                const photoUrl = await dataManager.uploadImage(
+                    newPhotoFiles[i], 
+                    'hotel-photos', 
+                    photoName
+                );
+                newUploadedPhotos.push(photoUrl);
+            }
+        } catch (error) {
+            console.error('Error uploading new photos:', error);
+            showToast('Error uploading new photos', 'error');
+            return;
+        }
+    }
+    
+    hotel.photos = [...existingOrderedPhotos, ...newUploadedPhotos];
+    
+    // REMOVED QR code upload logic since it's not in the form
+    
+    try {
+        await dataManager.saveHotel(hotel, false);
+        
+        showToast('Hotel updated successfully!', 'success');
+        closeModal('editHotelModal');
+        
+        await dataManager.getHotels();
+        renderHotels();
+        
+    } catch (error) {
+        console.error('Error updating hotel:', error);
+        showToast('Failed to update hotel: ' + error.message, 'error');
+    }
+});
+
+// ========== ROOM MANAGEMENT ==========
+
+function loadRoomsForHotel() {
+    const hotelName = document.getElementById('rooms-hotel-select').value;
+    currentRoomsHotel = hotels.find(h => h.name === hotelName);
+    
+    if (!currentRoomsHotel) {
+        document.getElementById('rooms-controls').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('rooms-controls').style.display = 'block';
+    renderRoomTypes();
+}
+
+function renderRoomTypes() {
+    const container = document.getElementById('room-types-list');
+    
+    if (!currentRoomsHotel.roomTypes || currentRoomsHotel.roomTypes.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 40px; color: var(--gray);">No room types found. Add your first room type.</p>';
+        return;
+    }
+
+    let html = '<table class="data-table"><thead><tr><th>Room Type</th><th>Base Price</th><th>CP Price</th><th>Max Adults</th><th>Max Occupants</th><th>Amenities</th><th>Photos</th><th>Actions</th></tr></thead><tbody>';
+    
+    currentRoomsHotel.roomTypes.forEach((roomType, index) => {
+        const roomDetail = currentRoomsHotel.roomDetails[roomType] || {};
+        const photos = roomDetail.photos || [];
+        const amenities = roomDetail.amenities || [];
+        
+        const amenitiesDisplay = Array.isArray(amenities) ? 
+            amenities.join(', ') : 
+            (amenities || '');
+        
+        html += `<tr>
+            <td><strong>${roomType}</strong></td>
+            <td>₹${roomDetail.basePrice || '0'}</td>
+            <td>₹${roomDetail.cpPrice || '0'}</td>
+            <td>${roomDetail.maxAdults || '2'}</td>
+            <td>${roomDetail.maxOccupants || '2'}</td>
+            <td>
+                ${amenitiesDisplay ? 
+                    `<span class="text-sm text-gray-700">${amenitiesDisplay}</span>` : 
+                    '<span class="text-gray-500">No amenities</span>'
+                }
+            </td>
+            <td>
+                ${photos.length > 0 ? 
+                    `<button class="btn btn-sm" onclick="openPhotoCarousel(${JSON.stringify(photos)})">
+                        <i class="fas fa-images"></i> ${photos.length} Photos
+                    </button>` : 
+                    '<span class="text-gray-500">No photos</span>'
+                }
+            </td>
+            <td>
+                <button class="btn btn-primary" onclick="editRoomType(${index})">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-error" onclick="deleteRoomType('${roomType}')">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function openRoomModal() {
+    document.getElementById('room-modal-title').textContent = 'Add New Room Type';
+    document.getElementById('roomForm').reset();
+    document.getElementById('room-edit-index').value = '';
+    document.getElementById('room-photos-preview').innerHTML = '';
+    document.getElementById('room-child-min-age').value = '5';
+    document.getElementById('room-child-max-age').value = '12';
+    document.getElementById('room-amenities').value = '';
+    
+    openModal('roomModal');
+}
+
+function editRoomType(index) {
+    const roomType = currentRoomsHotel.roomTypes[index];
+    const roomDetail = currentRoomsHotel.roomDetails[roomType] || {};
+    
+    document.getElementById('room-modal-title').textContent = 'Edit Room Type';
+    document.getElementById('room-type-name').value = roomType;
+    document.getElementById('room-base-price').value = roomDetail.basePrice || '';
+    document.getElementById('room-cp-price').value = roomDetail.cpPrice || '';
+    document.getElementById('room-max-adults').value = roomDetail.maxAdults || 2;
+    document.getElementById('room-max-occupants').value = roomDetail.maxOccupants || 2;
+    document.getElementById('room-child-min-age').value = roomDetail.childMinAge || 5;
+    document.getElementById('room-child-max-age').value = roomDetail.childMaxAge || 12;
+    document.getElementById('room-edit-index').value = index;
+    
+    const amenities = roomDetail.amenities || [];
+    document.getElementById('room-amenities').value = Array.isArray(amenities) ? 
+        amenities.join(', ') : 
+        (amenities || '');
+    
+    const previewContainer = document.getElementById('room-photos-preview');
+    previewContainer.innerHTML = '';
+    (roomDetail.photos || []).forEach((photo, index) => {
+        const photoItem = document.createElement('div');
+        photoItem.className = 'multi-photo-item';
+        photoItem.draggable = true;
+        photoItem.innerHTML = `
+            <img src="${photo}" alt="Room photo">
+            <button class="delete-btn" onclick="removeRoomPhoto('${roomType}', '${photo}')">×</button>
+            <div class="order-badge">${index + 1}</div>
+        `;
+        
+        photoItem.addEventListener('dragstart', handleDragStart);
+        photoItem.addEventListener('dragover', handleDragOver);
+        photoItem.addEventListener('drop', handleDrop);
+        photoItem.addEventListener('dragend', handleDragEnd);
+        
+        previewContainer.appendChild(photoItem);
+    });
+    
+    openModal('roomModal');
+}
+
+async function removeRoomPhoto(roomType, photoUrl) {
+    if (!confirm('Remove this photo?')) return;
+    
+    const roomDetail = currentRoomsHotel.roomDetails[roomType] || {};
+    roomDetail.photos = (roomDetail.photos || []).filter(p => p !== photoUrl);
+    currentRoomsHotel.roomDetails[roomType] = roomDetail;
+    
+    try {
+        await dataManager.saveHotel(currentRoomsHotel, false);
+        showToast('Photo removed', 'success');
+        renderRoomTypes();
+    } catch (error) {
+        console.error('Error removing photo:', error);
+        showToast('Failed to remove photo', 'error');
+    }
+}
+
+async function deleteRoomType(roomType) {
+    if (!confirm(`Delete room type "${roomType}"?`)) return;
+    
+    try {
+        currentRoomsHotel.roomTypes = currentRoomsHotel.roomTypes.filter(rt => rt !== roomType);
+        delete currentRoomsHotel.roomDetails[roomType];
+        await dataManager.saveHotel(currentRoomsHotel, false);
+        showToast('Room type deleted', 'success');
+        renderRoomTypes();
+    } catch (error) {
+        console.error('Error deleting room type:', error);
+        showToast('Failed to delete room type', 'error');
+    }
+}
+
+document.getElementById('roomForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const roomTypeName = document.getElementById('room-type-name').value.trim();
+  const basePrice = document.getElementById('room-base-price').value;
+  const cpPrice = document.getElementById('room-cp-price').value;
+  const maxAdults = document.getElementById('room-max-adults').value;
+  const maxOccupants = document.getElementById('room-max-occupants').value;
+  const childMinAge = document.getElementById('room-child-min-age').value;
+  const childMaxAge = document.getElementById('room-child-max-age').value;
+  const amenitiesInput = document.getElementById('room-amenities').value.trim();
+  const editIndex = document.getElementById('room-edit-index').value;
+  
+  const amenities = amenitiesInput ? 
+    amenitiesInput.split(',').map(a => a.trim()).filter(a => a !== '') : 
+    [];
+  
+  if (!roomTypeName || !basePrice) {
+    showToast('Please fill in all required fields', 'error');
+    return;
+  }
+  
+  try {
+    const orderedPhotoUrls = getOrderedPhotoUrls('room-photos-preview');
+    
+    // Ensure roomTypes array exists
+    if (!currentRoomsHotel.roomTypes) {
+      currentRoomsHotel.roomTypes = [];
+    }
+    
+    // Ensure roomDetails object exists
+    if (!currentRoomsHotel.roomDetails) {
+      currentRoomsHotel.roomDetails = {};
+    }
+    
+    if (editIndex === '') {
+      // Add new room type
+      if (!currentRoomsHotel.roomTypes.includes(roomTypeName)) {
+        currentRoomsHotel.roomTypes.push(roomTypeName);
+      }
+    } else {
+      // Edit existing room type
+      const oldRoomType = currentRoomsHotel.roomTypes[editIndex];
+      if (oldRoomType !== roomTypeName) {
+        currentRoomsHotel.roomTypes[editIndex] = roomTypeName;
+        if (currentRoomsHotel.roomDetails[oldRoomType]) {
+          currentRoomsHotel.roomDetails[roomTypeName] = currentRoomsHotel.roomDetails[oldRoomType];
+          delete currentRoomsHotel.roomDetails[oldRoomType];
+        }
+      }
+    }
+    
+    // Save room details
+    currentRoomsHotel.roomDetails[roomTypeName] = {
+      basePrice: parseFloat(basePrice),
+      cpPrice: cpPrice ? parseFloat(cpPrice) : null,
+      maxAdults: parseInt(maxAdults),
+      maxOccupants: parseInt(maxOccupants),
+      childMinAge: parseInt(childMinAge),
+      childMaxAge: parseInt(childMaxAge),
+      amenities: amenities,
+      photos: orderedPhotoUrls
+    };
+    
+    console.log('Saving room data:', {
+      roomTypes: currentRoomsHotel.roomTypes,
+      roomDetails: currentRoomsHotel.roomDetails
+    });
+    
+    await dataManager.saveHotel(currentRoomsHotel, false);
+    
+    showToast('Room type saved successfully!', 'success');
+    closeModal('roomModal');
+    renderRoomTypes();
+    
+  } catch (error) {
+    console.error('Error saving room type:', error);
+    showToast('Failed to save room type: ' + error.message, 'error');
+  }
+});
+
+// ========== RATE MANAGEMENT ==========
+
+function loadRatesForHotel() {
+    const hotelName = document.getElementById('rates-hotel-select').value;
+    currentRatesHotel = hotels.find(h => h.name === hotelName);
+    
+    if (!currentRatesHotel) {
+        document.getElementById('rates-controls').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('rates-controls').style.display = 'block';
+    
+    const bulkRoomTypeSelect = document.getElementById('bulk-rate-room-type');
+    bulkRoomTypeSelect.innerHTML = '<option value="">Select Room Type</option>';
+    if (currentRatesHotel.roomTypes) {
+        currentRatesHotel.roomTypes.forEach(roomType => {
+            const option = document.createElement('option');
+            option.value = roomType;
+            option.textContent = roomType;
+            bulkRoomTypeSelect.appendChild(option);
+        });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('rates-start-date').value = today;
+    ratesStartDate = new Date(today);
+    
+    loadRatesForSelectedDate();
+}
+
+function loadRatesForSelectedDate() {
+    const startDateStr = document.getElementById('rates-start-date').value;
+    if (!startDateStr) return;
+    
+    ratesStartDate = new Date(startDateStr);
+    document.getElementById('rates-date-range').textContent = formatDateRange(startDateStr);
+    renderRatesTable();
+}
+
+function navigateRatesCalendar(days) {
+    ratesStartDate.setDate(ratesStartDate.getDate() + days);
+    const newDateStr = ratesStartDate.toISOString().split('T')[0];
+    document.getElementById('rates-start-date').value = newDateStr;
+    loadRatesForSelectedDate();
+}
+
+function getRoomsSold(hotel, roomType, date) {
+    if (!bookings || bookings.length === 0) return 0;
+    
+    const sold = bookings.filter(booking => {
+        if (booking.hotel !== hotel.name || booking.room_type !== roomType || booking.status !== 'confirmed') {
+            return false;
+        }
+        
+        const checkin = new Date(booking.checkin);
+        const checkout = new Date(booking.checkout);
+        const currentDate = new Date(date);
+        
+        return currentDate >= checkin && currentDate < checkout;
+    }).reduce((total, booking) => total + (booking.num_rooms || 1), 0);
+    
+    return sold;
+}
+
+function renderRatesTable() {
+    const container = document.getElementById('rates-table-container');
+    
+    if (!currentRatesHotel || !currentRatesHotel.roomTypes || currentRatesHotel.roomTypes.length === 0) {
+        container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--gray);">No room types found for this hotel.</p>';
+        return;
+    }
+
+    const dates = getNext7Days(ratesStartDate.toISOString().split('T')[0]);
+    
+    let html = '<table class="rates-rotated-table"><thead><tr><th class="date-cell">Date</th>';
+    
+    currentRatesHotel.roomTypes.forEach(roomType => {
+        html += `<th>
+            <div>${roomType}</div>
+            <div style="font-size: 11px; font-weight: normal; color: var(--gray);">
+                <div>Single EP / Single CP / Double EP / Double CP / Extra Adult</div>
+            </div>
+        </th>`;
+    });
+    
+    html += '</tr></thead><tbody>';
+    
+    dates.forEach(date => {
+        const isPast = isPastDate(date);
+        const rowClass = isPast ? 'past-date-row' : '';
+        
+        html += `<tr class="${rowClass}">
+            <td class="date-cell ${isPast ? 'past-date-cell' : ''}">
+                <div><strong>${formatDateForDisplay(date)}</strong></div>
+                <div style="font-size: 12px; color: var(--gray);">
+                    ${new Date(date).toLocaleDateString('en-US', {weekday: 'short'})}
+                    ${isPast ? '<div class="past-date-label">Past Date</div>' : ''}
+                </div>
+            </td>`;
+        
+        currentRatesHotel.roomTypes.forEach(roomType => {
+            const ratesForDate = currentRatesHotel.rates[date] || {};
+            const roomRates = ratesForDate[roomType] || {};
+            const singleEpRate = roomRates.single_ep || '';
+            const singleCpRate = roomRates.single_cp || '';
+            const doubleEpRate = roomRates.ep || '';
+            const doubleCpRate = roomRates.cp || '';
+            const extraAdultRate = roomRates.extra_adult || '';
+            const roomsSold = getRoomsSold(currentRatesHotel, roomType, date);
+            const changeKey = `${date}-${roomType}`;
+            const hasChanges = pendingRateChanges.has(changeKey);
+            const cellClass = hasChanges ? 'changed-cell' : '';
+            const disabledAttr = isPast ? 'disabled' : '';
+            
+            html += `<td class="${cellClass} ${isPast ? 'disabled-date' : ''}">
+                <div class="rate-plan-group">
+                    <div class="rate-plan-section">
+                        <input type="number" class="rates-input-rotated" 
+                               value="${singleEpRate}" 
+                               placeholder="Single EP"
+                               data-date="${date}"
+                               data-room-type="${roomType}"
+                               data-type="single_ep"
+                               onchange="handleRateChange(this)"
+                               ${disabledAttr}>
+                        <div class="rate-plan-label">Single EP</div>
+                    </div>
+                    <div class="rate-plan-section">
+                        <input type="number" class="rates-input-rotated" 
+                               value="${singleCpRate}" 
+                               placeholder="Single CP"
+                               data-date="${date}"
+                               data-room-type="${roomType}"
+                               data-type="single_cp"
+                               onchange="handleRateChange(this)"
+                               ${disabledAttr}>
+                        <div class="rate-plan-label">Single CP</div>
+                    </div>
+                    <div class="rate-plan-section">
+                        <input type="number" class="rates-input-rotated" 
+                               value="${doubleEpRate}" 
+                               placeholder="Double EP"
+                               data-date="${date}"
+                               data-room-type="${roomType}"
+                               data-type="ep"
+                               onchange="handleRateChange(this)"
+                               ${disabledAttr}>
+                        <div class="rate-plan-label">Double EP</div>
+                    </div>
+                    <div class="rate-plan-section">
+                        <input type="number" class="rates-input-rotated" 
+                               value="${doubleCpRate}" 
+                               placeholder="Double CP"
+                               data-date="${date}"
+                               data-room-type="${roomType}"
+                               data-type="cp"
+                               onchange="handleRateChange(this)"
+                               ${disabledAttr}>
+                        <div class="rate-plan-label">Double CP</div>
+                    </div>
+                    <div class="rate-plan-section">
+                        <input type="number" class="rates-input-rotated" 
+                               value="${extraAdultRate}" 
+                               placeholder="Extra"
+                               data-date="${date}"
+                               data-room-type="${roomType}"
+                               data-type="extra_adult"
+                               onchange="handleRateChange(this)"
+                               ${disabledAttr}>
+                        <div class="rate-plan-label">Extra Person</div>
+                    </div>
+                    ${roomsSold > 0 ? `<div class="rooms-sold-badge">${roomsSold} sold</div>` : ''}
+                    <div class="rate-save-cell">
+                        <button onclick="saveRate('${date}', '${roomType}')" 
+                                class="rate-save-btn" 
+                                id="save-rate-btn-${date}-${roomType.replace(/\s+/g, '-')}"
+                                style="display: ${hasChanges ? 'inline-block' : 'none'}"
+                                ${disabledAttr}>
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </td>`;
+        });
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+
+function handleRateChange(input) {
+    const date = input.getAttribute('data-date');
+    const roomType = input.getAttribute('data-room-type');
+    const type = input.getAttribute('data-type');
+    const value = input.value;
+    
+    const key = `${date}-${roomType}`;
+    if (!pendingRateChanges.has(key)) {
+        pendingRateChanges.set(key, {});
+    }
+    const changes = pendingRateChanges.get(key);
+    changes[type] = value && value !== '' ? parseInt(value) : null;
+    
+    const saveBtn = document.getElementById(`save-rate-btn-${date}-${roomType.replace(/\s+/g, '-')}`);
+    if (saveBtn) {
+        saveBtn.style.display = 'inline-block';
+    }
+    
+    input.closest('td').classList.add('changed-cell');
+}
+
+async function saveRate(date, roomType) {
+    try {
+        if (!currentRatesHotel.rates[date]) {
+            currentRatesHotel.rates[date] = {};
+        }
+        if (!currentRatesHotel.rates[date][roomType]) {
+            currentRatesHotel.rates[date][roomType] = {};
+        }
+        
+        const key = `${date}-${roomType}`;
+        const changes = pendingRateChanges.get(key);
+        
+        if (changes) {
+            // Handle all rate types
+            ['single_ep', 'single_cp', 'ep', 'cp', 'extra_adult'].forEach(type => {
+                if (changes[type] !== undefined) {
+                    currentRatesHotel.rates[date][roomType][type] = changes[type];
+                }
+            });
+        }
+        
+        await dataManager.saveHotel(currentRatesHotel, false);
+        
+        pendingRateChanges.delete(key);
+        
+        const saveBtn = document.getElementById(`save-rate-btn-${date}-${roomType.replace(/\s+/g, '-')}`);
+        if (saveBtn) {
+            saveBtn.style.display = 'none';
+        }
+        const cell = document.querySelector(`td[id="rate-cell-${date}-${roomType.replace(/\s+/g, '-')}"]`);
+        if (cell) {
+            cell.classList.remove('changed-cell');
+        }
+        
+        showToast('Rates saved successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error saving rates:', error);
+        showToast('Failed to save rates', 'error');
+    }
+}
+
+// ========== BOOKING MANAGEMENT ==========
+
+function updateBookingStats(bookings) {
+    const totalBookings = bookings.length;
+    const confirmedBookings = bookings.filter(b => b.status === 'confirmed').length;
+    const pendingBookings = bookings.filter(b => b.status === 'pending').length;
+    const cancelledBookings = bookings.filter(b => b.status === 'cancelled').length;
+
+    document.getElementById('total-bookings').textContent = totalBookings;
+    document.getElementById('confirmed-bookings').textContent = confirmedBookings;
+    document.getElementById('pending-bookings').textContent = pendingBookings;
+    document.getElementById('cancelled-bookings').textContent = cancelledBookings;
+}
+
+function renderBookings() {
+    const container = document.getElementById('bookings-list');
+    
+    let filteredBookings = applyBookingFiltersToData();
+    
+    if (filteredBookings.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 40px; color: var(--gray);">No bookings found matching your criteria.</p>';
+        return;
+    }
+
+    let html = '<table class="data-table"><thead><tr><th>Booking ID</th><th>Hotel</th><th>Room Type</th><th>Guest</th><th>Check-in</th><th>Check-out</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    
+    filteredBookings.forEach(booking => {
+        const statusClass = booking.status === 'confirmed' ? 'text-green-600' : 
+                           booking.status === 'pending' ? 'text-yellow-600' : 'text-red-600';
+        
+        html += `<tr>
+            <td><strong>${booking.booking_number}</strong></td>
+            <td>${booking.hotel}</td>
+            <td>${booking.room_type}</td>
+            <td>
+                <div>${booking.guest_name}</div>
+                <div class="text-sm text-gray-600">${booking.guest_email}</div>
+            </td>
+            <td>${formatDateForDisplay(booking.checkin)}</td>
+            <td>${formatDateForDisplay(booking.checkout)}</td>
+            <td>₹${booking.total_amount}</td>
+            <td><span class="${statusClass} font-semibold">${booking.status}</span></td>
+            <td>
+                <button class="btn btn-primary" onclick="viewBookingVoucher('${booking.booking_number}')">
+                    <i class="fas fa-eye"></i> View
+                </button>
+                ${booking.status === 'pending' ? `
+                    <button class="btn btn-success" onclick="confirmBooking('${booking.booking_number}')">
+                        <i class="fas fa-check"></i> Confirm
+                    </button>
+                    <button class="btn btn-error" onclick="cancelBooking('${booking.booking_number}')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                ` : ''}
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function applyBookingFiltersToData() {
+    const hotelFilter = document.getElementById('booking-hotel-filter').value;
+    const checkinFilter = document.getElementById('booking-checkin-filter').value;
+    const checkoutFilter = document.getElementById('booking-checkout-filter').value;
+    const dateFilter = document.getElementById('booking-date-filter').value;
+    const statusFilter = document.getElementById('booking-status-filter').value;
+    
+    let filtered = [...bookings];
+    
+    if (hotelFilter) {
+        filtered = filtered.filter(b => b.hotel === hotelFilter);
+    }
+    
+    if (checkinFilter) {
+        filtered = filtered.filter(b => b.checkin === checkinFilter);
+    }
+    
+    if (checkoutFilter) {
+        filtered = filtered.filter(b => b.checkout === checkoutFilter);
+    }
+    
+    if (dateFilter) {
+        filtered = filtered.filter(b => {
+            const bookingDate = new Date(b.created_at).toISOString().split('T')[0];
+            return bookingDate === dateFilter;
+        });
+    }
+    
+    if (statusFilter) {
+        filtered = filtered.filter(b => b.status === statusFilter);
+    }
+    
+    return filtered;
+}
+
+function applyBookingFilters() {
+    renderBookings();
+}
+
+function clearBookingFilters() {
+    document.getElementById('booking-hotel-filter').value = '';
+    document.getElementById('booking-checkin-filter').value = '';
+    document.getElementById('booking-checkout-filter').value = '';
+    document.getElementById('booking-date-filter').value = '';
+    document.getElementById('booking-status-filter').value = '';
+    renderBookings();
+}
+
+function populateBookingFilters() {
+    const hotelFilter = document.getElementById('booking-hotel-filter');
+    hotelFilter.innerHTML = '<option value="">All Hotels</option>';
+    
+    hotels.forEach(hotel => {
+        const option = document.createElement('option');
+        option.value = hotel.name;
+        option.textContent = hotel.name;
+        hotelFilter.appendChild(option);
+    });
+}
+
+function viewBookingVoucher(bookingNumber) {
+    const booking = bookings.find(b => b.booking_number === bookingNumber);
+    if (!booking) {
+        showToast('Booking not found', 'error');
+        return;
+    }
+    
+    const voucherContent = document.getElementById('voucher-content');
+    voucherContent.innerHTML = `
+        <h4 style="color: var(--primary-dark); margin-bottom: 15px;">Booking Voucher - ${booking.booking_number}</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <strong>Guest Information:</strong><br>
+                ${booking.guest_name}<br>
+                ${booking.guest_email}<br>
+                ${booking.guest_phone || 'N/A'}
+            </div>
+            <div>
+                <strong>Booking Details:</strong><br>
+                ${booking.hotel}<br>
+                ${booking.room_type}<br>
+                ${booking.num_rooms} room(s)<br>
+                ${booking.num_adults} adults, ${booking.num_children || 0} children
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <strong>Stay Details:</strong><br>
+                Check-in: ${formatDateForDisplay(booking.checkin)}<br>
+                Check-out: ${formatDateForDisplay(booking.checkout)}<br>
+                ${booking.total_nights} night(s)
+            </div>
+            <div>
+                <strong>Payment:</strong><br>
+                Amount: ₹${booking.total_amount}<br>
+                Method: ${booking.payment_method}<br>
+                Status: <span style="color: ${booking.status === 'confirmed' ? 'green' : booking.status === 'pending' ? 'orange' : 'red'}">${booking.status}</span>
+            </div>
+        </div>
+        ${booking.special_requests ? `
+            <div style="margin-bottom: 15px;">
+                <strong>Special Requests:</strong><br>
+                ${booking.special_requests}
+            </div>
+        ` : ''}
+    `;
+    
+    openModal('voucherModal');
+}
+
+async function confirmBooking(bookingNumber) {
+    if (!confirm('Confirm this booking?')) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('bookings')
+            .update({ status: 'confirmed' })
+            .eq('booking_number', bookingNumber);
+            
+        if (error) throw error;
+        
+        showToast('Booking confirmed successfully!', 'success');
+        await dataManager.getBookings();
+        renderBookings();
+    } catch (error) {
+        console.error('Error confirming booking:', error);
+        showToast('Failed to confirm booking', 'error');
+    }
+}
+
+async function cancelBooking(bookingNumber) {
+    if (!confirm('Cancel this booking?')) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('booking_number', bookingNumber);
+            
+        if (error) throw error;
+        
+        showToast('Booking cancelled successfully!', 'success');
+        await dataManager.getBookings();
+        renderBookings();
+    } catch (error) {
+        console.error('Error cancelling booking:', error);
+        showToast('Failed to cancel booking', 'error');
+    }
+}
+
+function printVoucher() {
+    window.print();
+}
+
+// ========== HELPER FUNCTIONS ==========
+
+function previewHotelQR(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('hotel-qr-preview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function previewEditHotelQR(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('edit-hotel-qr-preview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function openAmenitiesModal(amenities) {
+    const amenitiesDisplay = document.getElementById('amenities-display');
+    
+    if (!amenities || amenities.length === 0) {
+        amenitiesDisplay.innerHTML = '<p class="text-gray-500 text-center py-4">No amenities available for this room</p>';
+    } else {
+        amenitiesDisplay.innerHTML = `
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 class="font-semibold text-gray-800 mb-3">Room Amenities:</h4>
+                <p class="text-gray-700 text-lg leading-relaxed">
+                    ${Array.isArray(amenities) ? amenities.join(', ') : amenities}
+                </p>
+            </div>
+        `;
+    }
+    
+    openModal('amenitiesModal');
+}
+// ========== INVENTORY MANAGEMENT ==========
+
+function loadInventoryForHotel() {
+    const hotelName = document.getElementById('inventory-hotel-select').value;
+    currentInventoryHotel = hotels.find(h => h.name === hotelName);
+    
+    if (!currentInventoryHotel) {
+        document.getElementById('inventory-controls').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('inventory-controls').style.display = 'block';
+    
+    const bulkRoomTypeSelect = document.getElementById('bulk-inventory-room-type');
+    bulkRoomTypeSelect.innerHTML = '<option value="">Select Room Type</option>';
+    if (currentInventoryHotel.roomTypes) {
+        currentInventoryHotel.roomTypes.forEach(roomType => {
+            const option = document.createElement('option');
+            option.value = roomType;
+            option.textContent = roomType;
+            bulkRoomTypeSelect.appendChild(option);
+        });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('inventory-start-date').value = today;
+    inventoryStartDate = new Date(today);
+    
+    loadInventoryForSelectedDate();
+}
+
+function loadInventoryForSelectedDate() {
+    const startDateStr = document.getElementById('inventory-start-date').value;
+    if (!startDateStr) return;
+    
+    inventoryStartDate = new Date(startDateStr);
+    document.getElementById('inventory-date-range').textContent = formatDateRange(startDateStr);
+    renderInventoryTable();
+}
+
+function navigateInventoryCalendar(days) {
+    inventoryStartDate.setDate(inventoryStartDate.getDate() + days);
+    const newDateStr = inventoryStartDate.toISOString().split('T')[0];
+    document.getElementById('inventory-start-date').value = newDateStr;
+    loadInventoryForSelectedDate();
+}
+
+function renderInventoryTable() {
+    const container = document.getElementById('inventory-table-container');
+    
+    if (!currentInventoryHotel || !currentInventoryHotel.roomTypes || currentInventoryHotel.roomTypes.length === 0) {
+        container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--gray);">No room types found for this hotel.</p>';
+        return;
+    }
+
+    const dates = getNext7Days(inventoryStartDate.toISOString().split('T')[0]);
+    
+    let html = '<table class="inventory-rotated-table"><thead><tr><th class="date-cell">Date</th>';
+    
+    currentInventoryHotel.roomTypes.forEach(roomType => {
+        html += `<th>${roomType}</th>`;
+    });
+    
+    html += '</tr></thead><tbody>';
+    
+    dates.forEach(date => {
+        const isPast = isPastDate(date);
+        const rowClass = isPast ? 'past-date-row' : '';
+        
+        html += `<tr class="${rowClass}">
+            <td class="date-cell ${isPast ? 'past-date-cell' : ''}">
+                <div><strong>${formatDateForDisplay(date)}</strong></div>
+                <div style="font-size: 12px; color: var(--gray);">
+                    ${new Date(date).toLocaleDateString('en-US', {weekday: 'short'})}
+                    ${isPast ? '<div class="past-date-label">Past Date</div>' : ''}
+                </div>
+            </td>`;
+        
+        currentInventoryHotel.roomTypes.forEach(roomType => {
+            const inventoryForDate = currentInventoryHotel.inventory[date] || {};
+            const roomInventory = inventoryForDate[roomType] || 0;
+            const roomsSold = getRoomsSold(currentInventoryHotel, roomType, date);
+            const changeKey = `${date}-${roomType}`;
+            const hasChanges = pendingInventoryChanges.has(changeKey);
+            const cellClass = hasChanges ? 'changed-cell' : '';
+            const disabledAttr = isPast ? 'disabled' : '';
+            
+            html += `<td class="${cellClass} ${isPast ? 'disabled-date' : ''}">
+                <div class="input-with-save">
+                    <input type="number" class="inventory-input-rotated" 
+                           value="${roomInventory}" 
+                           min="0"
+                           data-date="${date}"
+                           data-room-type="${roomType}"
+                           onchange="handleInventoryChange(this)"
+                           ${disabledAttr}>
+                    ${roomsSold > 0 ? `<div class="rooms-sold">${roomsSold} sold</div>` : ''}
+                    <div class="inventory-save-cell">
+                        <button onclick="saveInventory('${date}', '${roomType}')" 
+                                class="inventory-save-btn" 
+                                id="save-inventory-btn-${date}-${roomType.replace(/\s+/g, '-')}"
+                                style="display: ${hasChanges ? 'inline-block' : 'none'}"
+                                ${disabledAttr}>
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </td>`;
+        });
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function handleInventoryChange(input) {
+    const date = input.getAttribute('data-date');
+    const roomType = input.getAttribute('data-room-type');
+    const value = input.value;
+    
+    const key = `${date}-${roomType}`;
+    pendingInventoryChanges.set(key, value ? parseInt(value) : 0);
+    
+    const saveBtn = document.getElementById(`save-inventory-btn-${date}-${roomType.replace(/\s+/g, '-')}`);
+    if (saveBtn) {
+        saveBtn.style.display = 'inline-block';
+    }
+    
+    input.closest('td').classList.add('changed-cell');
+}
+
+async function saveInventory(date, roomType) {
+    try {
+        if (!currentInventoryHotel.inventory[date]) {
+            currentInventoryHotel.inventory[date] = {};
+        }
+        
+        const key = `${date}-${roomType}`;
+        const newValue = pendingInventoryChanges.get(key);
+        
+        if (newValue !== undefined) {
+            currentInventoryHotel.inventory[date][roomType] = newValue;
+        }
+        
+        await dataManager.saveHotel(currentInventoryHotel, false);
+        
+        pendingInventoryChanges.delete(key);
+        
+        const saveBtn = document.getElementById(`save-inventory-btn-${date}-${roomType.replace(/\s+/g, '-')}`);
+        if (saveBtn) {
+            saveBtn.style.display = 'none';
+        }
+        
+        const cell = document.querySelector(`input[data-date="${date}"][data-room-type="${roomType}"]`).closest('td');
+        if (cell) {
+            cell.classList.remove('changed-cell');
+        }
+        
+        showToast('Inventory saved successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error saving inventory:', error);
+        showToast('Failed to save inventory', 'error');
+    }
+}
+
+// ========== OFFERS & ADDONS MANAGEMENT ==========
+
+function loadOffersForHotel() {
+    const hotelName = document.getElementById('offers-hotel-select').value;
+    currentOffersHotel = hotels.find(h => h.name === hotelName);
+    
+    if (!currentOffersHotel) {
+        document.getElementById('offers-controls').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('offers-controls').style.display = 'block';
+    renderOffers();
+    renderAddons();
+}
+
+function renderOffers() {
+    const container = document.getElementById('offers-list');
+    
+    if (!currentOffersHotel.offers || currentOffersHotel.offers.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--gray);">No offers found. Add your first offer.</p>';
+        return;
+    }
+
+    let html = '';
+    currentOffersHotel.offers.forEach((offer, index) => {
+        const isActive = !offer.end_date || new Date(offer.end_date) >= new Date();
+        
+        html += `<div class="offer-card">
+            <div class="offer-header">
+                <h4 style="color: var(--primary-dark); margin: 0;">${offer.name}</h4>
+                <span style="background: ${isActive ? 'var(--success)' : 'var(--gray)'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    ${isActive ? 'Active' : 'Expired'}
+                </span>
+            </div>
+            <p style="margin: 10px 0; color: var(--dark);">${offer.description || 'No description'}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>Type:</strong> ${offer.type === 'percentage' ? 'Percentage' : offer.type === 'fixed' ? 'Fixed Amount' : 'Free Night'}<br>
+                    <strong>Value:</strong> ${offer.type === 'percentage' ? offer.value + '%' : '₹' + offer.value}<br>
+                    ${offer.start_date ? `<strong>Valid:</strong> ${formatDateForDisplay(offer.start_date)} to ${offer.end_date ? formatDateForDisplay(offer.end_date) : 'No end date'}` : ''}
+                </div>
+                <div class="offer-actions">
+                    <button class="btn btn-primary" onclick="editOffer(${index})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-error" onclick="deleteOffer(${index})">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+}
+
+function renderAddons() {
+    const container = document.getElementById('addons-list');
+    
+    if (!currentOffersHotel.addons || currentOffersHotel.addons.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--gray);">No addons found. Add your first addon.</p>';
+        return;
+    }
+
+    let html = '<table class="data-table"><thead><tr><th>Addon Name</th><th>Description</th><th>Price</th><th>Price Type</th><th>Actions</th></tr></thead><tbody>';
+    
+    currentOffersHotel.addons.forEach((addon, index) => {
+        html += `<tr>
+            <td><strong>${addon.name}</strong></td>
+            <td>${addon.description || 'No description'}</td>
+            <td>₹${addon.price}</td>
+            <td>${addon.type === 'per_booking' ? 'Per Booking' : addon.type === 'per_night' ? 'Per Night' : 'Per Person'}</td>
+            <td>
+                <button class="btn btn-primary" onclick="editAddon(${index})">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-error" onclick="deleteAddon(${index})">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function openOfferModal() {
+    document.getElementById('offer-modal-title').textContent = 'Add New Offer';
+    document.getElementById('offerForm').reset();
+    document.getElementById('offer-edit-index').value = '';
+    
+    const roomTypesSelect = document.getElementById('offer-room-types');
+    roomTypesSelect.innerHTML = '';
+    if (currentOffersHotel.roomTypes) {
+        currentOffersHotel.roomTypes.forEach(roomType => {
+            const option = document.createElement('option');
+            option.value = roomType;
+            option.textContent = roomType;
+            roomTypesSelect.appendChild(option);
+        });
+    }
+    
+    openModal('offerModal');
+}
+
+function editOffer(index) {
+    const offer = currentOffersHotel.offers[index];
+    document.getElementById('offer-modal-title').textContent = 'Edit Offer';
+    document.getElementById('offer-edit-index').value = index;
+    document.getElementById('offer-name').value = offer.name;
+    document.getElementById('offer-description').value = offer.description || '';
+    document.getElementById('offer-type').value = offer.type;
+    document.getElementById('offer-value').value = offer.value;
+    document.getElementById('offer-start-date').value = offer.start_date || '';
+    document.getElementById('offer-end-date').value = offer.end_date || '';
+    
+    const roomTypesSelect = document.getElementById('offer-room-types');
+    roomTypesSelect.innerHTML = '';
+    if (currentOffersHotel.roomTypes) {
+        currentOffersHotel.roomTypes.forEach(roomType => {
+            const option = document.createElement('option');
+            option.value = roomType;
+            option.textContent = roomType;
+            option.selected = offer.room_types && offer.room_types.includes(roomType);
+            roomTypesSelect.appendChild(option);
+        });
+    }
+    
+    openModal('offerModal');
+}
+
+async function deleteOffer(index) {
+    if (!confirm('Delete this offer?')) return;
+    
+    try {
+        currentOffersHotel.offers.splice(index, 1);
+        await dataManager.saveHotel(currentOffersHotel, false);
+        showToast('Offer deleted', 'success');
+        renderOffers();
+    } catch (error) {
+        console.error('Error deleting offer:', error);
+        showToast('Failed to delete offer', 'error');
+    }
+}
+
+function openAddonModal() {
+    document.getElementById('addonForm').reset();
+    document.getElementById('addon-edit-index').value = '';
+    openModal('addonModal');
+}
+
+function editAddon(index) {
+    const addon = currentOffersHotel.addons[index];
+    document.getElementById('addon-edit-index').value = index;
+    document.getElementById('addon-name').value = addon.name;
+    document.getElementById('addon-description').value = addon.description || '';
+    document.getElementById('addon-price').value = addon.price;
+    document.getElementById('addon-type').value = addon.type || 'per_booking';
+    openModal('addonModal');
+}
+
+async function deleteAddon(index) {
+    if (!confirm('Delete this addon?')) return;
+    
+    try {
+        currentOffersHotel.addons.splice(index, 1);
+        await dataManager.saveHotel(currentOffersHotel, false);
+        showToast('Addon deleted', 'success');
+        renderAddons();
+    } catch (error) {
+        console.error('Error deleting addon:', error);
+        showToast('Failed to delete addon', 'error');
+    }
+}
+
+// ========== FORM HANDLERS FOR OFFERS & ADDONS ==========
+
+document.getElementById('offerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('offer-name').value.trim();
+    const description = document.getElementById('offer-description').value.trim();
+    const type = document.getElementById('offer-type').value;
+    const value = parseFloat(document.getElementById('offer-value').value);
+    const startDate = document.getElementById('offer-start-date').value;
+    const endDate = document.getElementById('offer-end-date').value;
+    const roomTypesSelect = document.getElementById('offer-room-types');
+    const roomTypes = Array.from(roomTypesSelect.selectedOptions).map(opt => opt.value);
+    const editIndex = document.getElementById('offer-edit-index').value;
+    
+    if (!name || !value) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    try {
+        const offer = {
+            name,
+            description,
+            type,
+            value,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            room_types: roomTypes
+        };
+        
+        if (editIndex === '') {
+            if (!currentOffersHotel.offers) currentOffersHotel.offers = [];
+            currentOffersHotel.offers.push(offer);
+        } else {
+            currentOffersHotel.offers[editIndex] = offer;
+        }
+        
+        await dataManager.saveHotel(currentOffersHotel, false);
+        
+        showToast('Offer saved successfully!', 'success');
+        closeModal('offerModal');
+        renderOffers();
+        
+    } catch (error) {
+        console.error('Error saving offer:', error);
+        showToast('Failed to save offer: ' + error.message, 'error');
+    }
+});
+
+document.getElementById('addonForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('addon-name').value.trim();
+    const description = document.getElementById('addon-description').value.trim();
+    const price = parseFloat(document.getElementById('addon-price').value);
+    const type = document.getElementById('addon-type').value;
+    const editIndex = document.getElementById('addon-edit-index').value;
+    
+    if (!name || !price) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    try {
+        const addon = {
+            name,
+            description,
+            price,
+            type
+        };
+        
+        if (editIndex === '') {
+            if (!currentOffersHotel.addons) currentOffersHotel.addons = [];
+            currentOffersHotel.addons.push(addon);
+        } else {
+            currentOffersHotel.addons[editIndex] = addon;
+        }
+        
+        await dataManager.saveHotel(currentOffersHotel, false);
+        
+        showToast('Addon saved successfully!', 'success');
+        closeModal('addonModal');
+        renderAddons();
+        
+    } catch (error) {
+        console.error('Error saving addon:', error);
+        showToast('Failed to save addon: ' + error.message, 'error');
+    }
+});
+
+// ========== BULK UPDATE FUNCTIONS ==========
+
+function updateBulkDaysSelection(type) {
+    const startDate = document.getElementById(`bulk-${type}-start-date`).value;
+    const endDate = document.getElementById(`bulk-${type}-end-date`).value;
+    
+    if (!startDate || !endDate) {
+        document.getElementById(`bulk-${type}-days-selection`).style.display = 'none';
+        return;
+    }
+    
+    const dates = getDatesBetween(startDate, endDate);
+    const daysGrid = document.getElementById(`bulk-${type}-days-grid`);
+    daysGrid.innerHTML = '';
+    
+    dates.forEach(date => {
+        const dayName = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day-checkbox';
+        dayDiv.innerHTML = `
+            <input type="checkbox" id="${type}-day-${date}" value="${date}" checked>
+            <label for="${type}-day-${date}">${formatDateForDisplay(date)}<br>${dayName}</label>
+        `;
+        daysGrid.appendChild(dayDiv);
+    });
+    
+    document.getElementById(`bulk-${type}-days-selection`).style.display = 'block';
+}
+
+function selectAllDays(type) {
+    const checkboxes = document.querySelectorAll(`#bulk-${type}-days-grid input[type="checkbox"]`);
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+// Fixed Bulk Rate Update Form Handler
+document.getElementById('bulkRateUpdateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const startDate = document.getElementById('bulk-rate-start-date').value;
+    const endDate = document.getElementById('bulk-rate-end-date').value;
+    const roomType = document.getElementById('bulk-rate-room-type').value;
+    const singleEpRate = document.getElementById('bulk-rate-single-ep').value;
+    const singleCpRate = document.getElementById('bulk-rate-single-cp').value;
+    const doubleEpRate = document.getElementById('bulk-rate-ep').value;
+    const doubleCpRate = document.getElementById('bulk-rate-cp').value;
+    const extraAdultRate = document.getElementById('bulk-rate-extra-adult').value;
+    
+    if (!startDate || !endDate || !roomType || (!singleEpRate && !singleCpRate && !doubleEpRate && !doubleCpRate)) {
+        showToast('Please fill in at least one rate field', 'error');
+        return;
+    }
+    
+    // Get selected dates from checkboxes
+    const selectedDates = Array.from(document.querySelectorAll('#bulk-rate-days-grid input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+    
+    if (selectedDates.length === 0) {
+        showToast('Please select at least one date', 'error');
+        return;
+    }
+    
+    try {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="loading"></span> Updating Rates...';
+        submitBtn.disabled = true;
+        
+        console.log(`Updating rates for ${selectedDates.length} dates:`, selectedDates);
+        
+        // Update rates for each selected date
+        for (const date of selectedDates) {
+            console.log(`Setting rates for ${date}, room: ${roomType}`);
+            
+            // Ensure rates structure exists
+            if (!currentRatesHotel.rates) currentRatesHotel.rates = {};
+            if (!currentRatesHotel.rates[date]) currentRatesHotel.rates[date] = {};
+            if (!currentRatesHotel.rates[date][roomType]) currentRatesHotel.rates[date][roomType] = {};
+            
+            // Set the rates - convert to numbers
+            if (singleEpRate) currentRatesHotel.rates[date][roomType].single_ep = parseInt(singleEpRate);
+            if (singleCpRate) currentRatesHotel.rates[date][roomType].single_cp = parseInt(singleCpRate);
+            if (doubleEpRate) currentRatesHotel.rates[date][roomType].ep = parseInt(doubleEpRate);
+            if (doubleCpRate) currentRatesHotel.rates[date][roomType].cp = parseInt(doubleCpRate);
+            if (extraAdultRate) currentRatesHotel.rates[date][roomType].extra_adult = parseInt(extraAdultRate);
+        }
+        
+        console.log('Saving hotel with updated rates...');
+        
+        // Save to Supabase
+        await dataManager.saveHotel(currentRatesHotel, false);
+        
+        showToast(`Bulk rate update applied to ${selectedDates.length} dates!`, 'success');
+        
+        // Reset form but keep the hotel selection
+        this.reset();
+        document.getElementById('bulk-rate-days-selection').style.display = 'none';
+        
+        // Refresh the rates table to show updated values
+        renderRatesTable();
+        
+    } catch (error) {
+        console.error('Error applying bulk rate update:', error);
+        showToast('Failed to apply bulk rate update: ' + error.message, 'error');
+    } finally {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+});
+
+// Bulk Inventory Update Form Handler
+document.getElementById('bulkInventoryUpdateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const startDate = document.getElementById('bulk-inventory-start-date').value;
+    const endDate = document.getElementById('bulk-inventory-end-date').value;
+    const roomType = document.getElementById('bulk-inventory-room-type').value;
+    const rooms = document.getElementById('bulk-inventory-rooms').value;
+    
+    if (!startDate || !endDate || !roomType || !rooms) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    const selectedDates = Array.from(document.querySelectorAll('#bulk-inventory-days-grid input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+    
+    if (selectedDates.length === 0) {
+        showToast('Please select at least one date', 'error');
+        return;
+    }
+    
+    try {
+        for (const date of selectedDates) {
+            if (!currentInventoryHotel.inventory[date]) {
+                currentInventoryHotel.inventory[date] = {};
+            }
+            currentInventoryHotel.inventory[date][roomType] = parseInt(rooms);
+        }
+        
+        await dataManager.saveHotel(currentInventoryHotel, false);
+        
+        showToast(`Bulk inventory update applied to ${selectedDates.length} dates!`, 'success');
+        this.reset();
+        document.getElementById('bulk-inventory-days-selection').style.display = 'none';
+        
+        // Refresh the inventory table
+        renderInventoryTable();
+        
+    } catch (error) {
+        console.error('Error applying bulk inventory update:', error);
+        showToast('Failed to apply bulk inventory update', 'error');
+    }
+});
+
+// ========== MANUAL BOOKING ==========
+
+function openManualBookingModal() {
+    const hotelSelect = document.getElementById('manual-hotel');
+    hotelSelect.innerHTML = '<option value="">Select Hotel</option>';
+    hotels.forEach(hotel => {
+        const option = document.createElement('option');
+        option.value = hotel.name;
+        option.textContent = hotel.name;
+        hotelSelect.appendChild(option);
+    });
+    
+    document.getElementById('manualBookingForm').reset();
+    openModal('manualBookingModal');
+}
+
+document.getElementById('manual-hotel').addEventListener('change', function() {
+    const hotelName = this.value;
+    const roomTypeSelect = document.getElementById('manual-room-type');
+    roomTypeSelect.innerHTML = '<option value="">Select Room Type</option>';
+    
+    if (hotelName) {
+        const hotel = hotels.find(h => h.name === hotelName);
+        if (hotel && hotel.roomTypes) {
+            hotel.roomTypes.forEach(roomType => {
+                const option = document.createElement('option');
+                option.value = roomType;
+                option.textContent = roomType;
+                roomTypeSelect.appendChild(option);
+            });
+        }
+    }
+});
+
+document.getElementById('manualBookingForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const hotel = document.getElementById('manual-hotel').value;
+    const roomType = document.getElementById('manual-room-type').value;
+    const checkin = document.getElementById('manual-checkin').value;
+    const checkout = document.getElementById('manual-checkout').value;
+    const adults = document.getElementById('manual-adults').value;
+    const children = document.getElementById('manual-children').value;
+    const rooms = document.getElementById('manual-rooms').value;
+    const mealPlan = document.getElementById('manual-meal-plan').value;
+    const guestName = document.getElementById('manual-guest-name').value;
+    const guestEmail = document.getElementById('manual-guest-email').value;
+    const guestPhone = document.getElementById('manual-guest-phone').value;
+    const totalAmount = document.getElementById('manual-total-amount').value;
+    
+    if (!hotel || !roomType || !checkin || !checkout || !adults || !rooms || !guestName || !guestEmail || !totalAmount) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    try {
+        const bookingNumber = 'MAN' + Date.now();
+        const checkinDate = new Date(checkin);
+        const checkoutDate = new Date(checkout);
+        const nights = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+        
+        const bookingData = {
+            booking_number: bookingNumber,
+            hotel: hotel,
+            room_type: roomType,
+            checkin: checkin,
+            checkout: checkout,
+            num_adults: parseInt(adults),
+            num_children: parseInt(children) || 0,
+            num_rooms: parseInt(rooms),
+            total_nights: nights,
+            meal_plan: mealPlan,
+            guest_name: guestName,
+            guest_email: guestEmail,
+            guest_phone: guestPhone,
+            total_amount: parseFloat(totalAmount),
+            status: 'confirmed',
+            payment_method: 'manual',
+            created_at: new Date().toISOString()
+        };
+        
+        await dataManager.createBooking(bookingData);
+        
+        showToast('Manual booking created successfully!', 'success');
+        closeModal('manualBookingModal');
+        
+        // Refresh bookings
+        await dataManager.getBookings();
+        if (document.getElementById('bookings-content').style.display !== 'none') {
+            renderBookings();
+        }
+        
+    } catch (error) {
+        console.error('Error creating manual booking:', error);
+        showToast('Failed to create booking: ' + error.message, 'error');
+    }
+});
+
+// ========== EXPORT TO EXCEL ==========
+
+function exportBookingsToExcel() {
+    if (bookings.length === 0) {
+        showToast('No bookings to export', 'warning');
+        return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Add headers
+    const headers = ["Booking ID", "Hotel", "Room Type", "Guest Name", "Guest Email", "Guest Phone", 
+                    "Check-in", "Check-out", "Nights", "Adults", "Children", "Rooms", 
+                    "Meal Plan", "Total Amount", "Status", "Payment Method", "Booking Date"];
+    csvContent += headers.join(",") + "\n";
+    
+    // Add data rows
+    bookings.forEach(booking => {
+        const row = [
+            booking.booking_number,
+            `"${booking.hotel}"`,
+            `"${booking.room_type}"`,
+            `"${booking.guest_name}"`,
+            `"${booking.guest_email}"`,
+            `"${booking.guest_phone || ''}"`,
+            booking.checkin,
+            booking.checkout,
+            booking.total_nights,
+            booking.num_adults,
+            booking.num_children || 0,
+            booking.num_rooms,
+            booking.meal_plan,
+            booking.total_amount,
+            booking.status,
+            booking.payment_method,
+            new Date(booking.created_at).toLocaleDateString()
+        ];
+        csvContent += row.join(",") + "\n";
+    });
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `bookings_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('Bookings exported successfully!', 'success');
+}
+// ========== INITIALIZATION ==========
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    
+    document.getElementById('bulk-rate-start-date').value = today;
+    document.getElementById('bulk-rate-end-date').value = nextWeekStr;
+    document.getElementById('bulk-inventory-start-date').value = today;
+    document.getElementById('bulk-inventory-end-date').value = nextWeekStr;
+    
+    try {
+        await dataManager.init();
+        renderHotels();
+    } catch (error) {
+        console.error('Error initializing:', error);
+        showToast('Failed to initialize application', 'error');
+    }
+});
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+};
+// ========== LOGIN MANAGEMENT ==========
+function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    // Demo credentials
+    const demoEmail = 'demo@kakkson.com';
+    const demoPassword = 'demo123';
+    
+    if (email === demoEmail && password === demoPassword) {
+        // Successful login
+        closeModal('loginModal');
+        showToast('Login successful!', 'success');
+        
+        // Show the main application
+        document.querySelector('.container').style.display = 'block';
+        
+        // Initialize the app
+        initializeApp();
+        
+    } else {
+        showToast('Invalid credentials. Use demo@kakkson.com / demo123', 'error');
+    }
+}
+
+function initializeApp() {
+    // Your existing initialization code here
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    
+    document.getElementById('bulk-rate-start-date').value = today;
+    document.getElementById('bulk-rate-end-date').value = nextWeekStr;
+    document.getElementById('bulk-inventory-start-date').value = today;
+    document.getElementById('bulk-inventory-end-date').value = nextWeekStr;
+    
+    try {
+        // Initialize with your existing data manager
+        dataManager.init();
+    } catch (error) {
+        console.error('Error initializing:', error);
+        showToast('Failed to initialize application', 'error');
+    }
+}
+
+// Add event listener for login form
+document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+// Hide main container until login
+document.querySelector('.container').style.display = 'none';
+
+// Show login modal on page load
+document.addEventListener('DOMContentLoaded', function() {
+    openModal('loginModal');
+});
+// Toggle Razorpay fields based on gateway selection
+document.getElementById('active-payment-gateway').addEventListener('change', function() {
+    const razorpayFields = document.getElementById('razorpay-fields');
+    if (this.value === 'razorpay') {
+        razorpayFields.style.display = 'block';
+        // Make fields required
+        document.getElementById('razorpay-key-id').required = true;
+        document.getElementById('razorpay-key-secret').required = true;
+    } else {
+        razorpayFields.style.display = 'none';
+        // Remove required attribute
+        document.getElementById('razorpay-key-id').required = false;
+        document.getElementById('razorpay-key-secret').required = false;
+    }
+});
+
+// Also add to edit hotel modal
+document.addEventListener('DOMContentLoaded', function() {
+    const editGatewaySelect = document.getElementById('edit-active-payment-gateway');
+    if (editGatewaySelect) {
+        editGatewaySelect.addEventListener('change', function() {
+            const editRazorpayFields = document.getElementById('edit-razorpay-fields');
+            if (this.value === 'razorpay') {
+                editRazorpayFields.style.display = 'block';
+            } else {
+                editRazorpayFields.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>

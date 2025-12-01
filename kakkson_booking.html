@@ -1,0 +1,5479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kakkson Hotels - Book Your Stay</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  // Initialize EmailJS (free service)
+  emailjs.init("qigQh2PVgaMufQQR3"); // Get from https://www.emailjs.com/
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --primary: #1976d2;
+  --primary-dark: #1565c0;
+  --secondary: #ff9800;
+  --success: #4caf50;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #f8fafc;
+}
+
+.booking-card {
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.booking-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.hotel-image {
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hotel-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.price-tag {
+  background: var(--primary);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.filter-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.toast-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.progress-bar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.voucher-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 15px;
+  padding: 30px;
+  margin: 20px 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.voucher-header {
+  text-align: center;
+  border-bottom: 2px solid rgba(255,255,255,0.3);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.voucher-details {
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.voucher-total {
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+.toast-success { background-color: var(--success); }
+.toast-error { background-color: #f44336; }
+.toast-warning { background-color: var(--secondary); }
+.toast-info { background-color: var(--primary); }
+
+.room-unavailable {
+  opacity: 0.6;
+  background-color: #f5f5f5;
+}
+
+.room-unavailable button {
+  background-color: #9ca3af !important;
+  cursor: not-allowed;
+}
+
+.hotel-card-container {
+  height: 250px;
+}
+
+/* OPTIMIZED HOTEL CAROUSEL */
+.hotel-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.hotel-carousel-inner {
+  display: flex;
+  transition: transform 0.5s ease;
+  height: 100%;
+}
+.occupancy-btn {
+    /* Remove disabled styling from main button */
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #1976d2;
+    background: white;
+    color: #1976d2;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.occupancy-btn:hover {
+    background: #1976d2;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Only disabled styling for minus buttons at minimum */
+.occupancy-btn:disabled {
+    border-color: #ccc;
+    color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.occupancy-btn:disabled:hover {
+    background: white;
+    color: #ccc;
+}
+.hotel-carousel-item {
+  min-width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.hotel-carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.hotel-carousel-item:hover img {
+  transform: scale(1.05);
+}
+
+.hotel-carousel-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s ease, background 0.2s ease;
+}
+
+.hotel-carousel:hover .hotel-carousel-control {
+  opacity: 1;
+}
+
+.hotel-carousel-control:hover {
+  background: rgba(0,0,0,0.9);
+}
+
+.hotel-carousel-control.prev {
+  left: 10px;
+}
+
+.hotel-carousel-control.next {
+  right: 10px;
+}
+
+.hotel-carousel-indicators {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.hotel-carousel-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.hotel-carousel-indicator:hover {
+  transform: scale(1.2);
+}
+
+.hotel-carousel-indicator.active {
+  background: white;
+  transform: scale(1.2);
+}
+
+.hotel-carousel-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 5;
+}
+
+.offer-badge {
+  background: #ff6b6b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.addon-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addon-item:hover {
+  border-color: var(--primary);
+  background: #f0f7ff;
+}
+
+.addon-item.selected {
+  border-color: var(--primary);
+  background: #e3f2fd;
+}
+
+.payment-option {
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-option:hover {
+  border-color: var(--primary);
+}
+
+.payment-option.selected {
+  border-color: var(--primary);
+  background: #f0f7ff;
+}
+
+.payment-option.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qr-code {
+  max-width: 200px;
+  margin: 10px auto;
+  display: block;
+}
+
+.convenience-fee-breakdown {
+  background: #f0f7ff;
+  border: 1px solid #d1e9ff;
+  border-radius: 6px;
+  padding: 10px;
+  margin: 8px 0;
+}
+
+.fee-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 14px;
+}
+/* Enhanced Room Card Layout */
+.room-card-container {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 24px;
+    border: 1px solid #e5e7eb;
+}
+
+.room-card-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.room-card-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
+    min-height: 280px;
+}
+
+.room-photo-carousel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.room-photo-carousel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.room-info-section {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.room-header {
+    margin-bottom: 20px;
+}
+
+.room-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.meta-item i {
+    color: #1976d2;
+    width: 16px;
+}
+
+.amenities-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.amenity-tag {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.occupancy-section {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #e5e7eb;
+}
+
+.occupancy-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+}
+
+.occupancy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.occupancy-category {
+    text-align: center;
+}
+
+.category-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 10px;
+}
+
+.occupancy-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.occupancy-limit {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.room-pricing {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.price-section {
+    text-align: right;
+}
+
+.price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.current-price {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #059669;
+}
+
+.price-period {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.single-price-note {
+    font-size: 0.75rem;
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.meal-plan-selector {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.meal-plan-btn {
+    padding: 8px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.meal-plan-btn.active {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.room-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.rooms-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rooms-selector label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.select-room-btn {
+    padding: 12px 24px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.select-room-btn:hover {
+    background: #047857;
+}
+
+.select-room-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.offer-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ef4444;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .room-card-grid {
+        grid-template-columns: 250px 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .room-card-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 200px 1fr;
+    }
+    
+    .occupancy-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .room-pricing {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .price-section {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .room-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rooms-selector {
+        justify-content: space-between;
+    }
+}/* Enhanced Room Card Layout */
+.room-card-container {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 24px;
+    border: 1px solid #e5e7eb;
+}
+
+.room-card-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.room-card-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
+    min-height: 280px;
+}
+
+.room-photo-carousel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.room-photo-carousel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.room-info-section {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.room-header {
+    margin-bottom: 20px;
+}
+
+.room-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.meta-item i {
+    color: #1976d2;
+    width: 16px;
+}
+
+.amenities-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.amenity-tag {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.occupancy-section {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #e5e7eb;
+}
+
+.occupancy-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+}
+
+.occupancy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.occupancy-category {
+    text-align: center;
+}
+
+.category-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 10px;
+}
+
+.occupancy-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.occupancy-limit {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.room-pricing {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.price-section {
+    text-align: right;
+}
+
+.price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.current-price {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #059669;
+}
+
+.price-period {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.single-price-note {
+    font-size: 0.75rem;
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.meal-plan-selector {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.meal-plan-btn {
+    padding: 8px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.meal-plan-btn.active {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.room-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.rooms-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rooms-selector label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.select-room-btn {
+    padding: 12px 24px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.select-room-btn:hover {
+    background: #047857;
+}
+
+.select-room-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.offer-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ef4444;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .room-card-grid {
+        grid-template-columns: 250px 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .room-card-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 200px 1fr;
+    }
+    
+    .occupancy-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .room-pricing {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .price-section {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-meta {/* Enhanced Room Card Layout */
+.room-card-container {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 24px;
+    border: 1px solid #e5e7eb;
+}
+
+.room-card-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.room-card-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
+    min-height: 280px;
+}
+
+.room-photo-carousel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.room-photo-carousel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.room-info-section {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.room-header {
+    margin-bottom: 20px;
+}
+
+.room-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.meta-item i {
+    color: #1976d2;
+    width: 16px;
+}
+
+.amenities-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.amenity-tag {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.occupancy-section {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #e5e7eb;
+}
+
+.occupancy-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+}
+
+.occupancy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.occupancy-category {
+    text-align: center;
+}
+
+.category-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 10px;
+}
+
+.occupancy-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.occupancy-limit {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.room-pricing {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.price-section {
+    text-align: right;
+}
+
+.price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.current-price {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #059669;
+}
+
+.price-period {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.single-price-note {
+    font-size: 0.75rem;
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.meal-plan-selector {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.meal-plan-btn {
+    padding: 8px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.meal-plan-btn.active {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.room-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.rooms-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rooms-selector label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.select-room-btn {
+    padding: 12px 24px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.select-room-btn:hover {
+    background: #047857;
+}
+
+.select-room-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.offer-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ef4444;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .room-card-grid {
+        grid-template-columns: 250px 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .room-card-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 200px 1fr;
+    }
+    
+    .occupancy-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .room-pricing {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .price-section {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .room-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rooms-selector {
+        justify-content: space-between;
+    }
+}
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .room-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rooms-selector {
+        justify-content: space-between;
+    }
+}
+.fee-item.main {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.fee-item.sub {
+  color: #666;
+  font-size: 12px;
+  padding-left: 15px;
+}
+
+/* NEW: Room card layout with photo carousel on top left */
+.room-card-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.room-photo-carousel {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin-top:100px;
+}
+/* Amenities Modal Styles */
+.amenities-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.amenities-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.amenities-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.amenities-modal.active .amenities-modal-content {
+  transform: translateY(0);
+}
+
+.amenities-modal-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.amenities-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.amenities-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.amenities-close-btn:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.amenity-item:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.amenity-icon {
+  color: #3b82f6;
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.amenity-name {
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.room-photo-carousel .carousel-inner {
+  display: flex;
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.room-photo-carousel .carousel-item {
+  min-width: 100%;
+  height: 100%;
+}
+
+.room-photo-carousel .carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.room-photo-carousel .carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.room-photo-carousel:hover .carousel-control {
+    opacity: 1;
+}
+
+.room-photo-carousel .carousel-control.prev {
+    left: 8px;
+}
+
+.room-photo-carousel .carousel-control.next {
+    right: 8px;
+}
+.room-photo-carousel .carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.room-photo-carousel:hover .carousel-control {
+    opacity: 1;
+}
+
+.room-photo-carousel .carousel-control.prev {
+    left: 8px;
+}
+
+.room-photo-carousel .carousel-control.next {
+    right: 8px;
+}
+
+.room-photo-carousel .carousel-indicators {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+}
+
+.room-photo-carousel .carousel-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.room-photo-carousel .carousel-indicator.active {
+    background: white;
+}.room-photo-carousel .carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.room-photo-carousel:hover .carousel-control {
+    opacity: 1;
+}
+
+.room-photo-carousel .carousel-control.prev {
+    left: 8px;
+}
+
+.room-photo-carousel .carousel-control.next {
+    right: 8px;
+}
+
+.room-photo-carousel .carousel-indicators {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+}
+
+.room-photo-carousel .carousel-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.room-photo-carousel .carousel-indicator.active {
+    background: white;
+}
+.room-photo-carousel .carousel-indicators {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+}
+
+.room-photo-carousel .carousel-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.room-photo-carousel .carousel-indicator.active {
+    background: white;
+}
+.room-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-top: 15px;
+}
+/* Room Occupancy Controls */
+.occupancy-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.occupancy-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #1976d2;
+    background: white;
+    color: #1976d2;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.occupancy-btn:hover {
+    background: #1976d2;
+    color: white;
+}
+
+.occupancy-btn:disabled {
+    border-color: #ccc;
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.occupancy-btn:disabled:hover {
+    background: white;
+    color: #ccc;
+}
+
+.occupancy-value {
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.occupancy-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Upgrade Modal */
+.upgrade-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.upgrade-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.upgrade-modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.upgrade-modal.active .upgrade-modal-content {
+    transform: translateY(0);
+}
+
+.upgrade-modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 15px;
+}
+
+.upgrade-modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.upgrade-modal-message {
+    color: #475569;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.upgrade-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+/* Room upgrade suggestion */
+.room-upgrade-suggestion {
+    background: #f0f9ff;
+    border: 2px solid #0ea5e9;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.room-upgrade-suggestion h4 {
+    color: #0369a1;
+    margin-bottom: 8px;
+}
+
+.room-upgrade-features {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.room-upgrade-features li {
+    padding: 5px 0;
+    color: #475569;
+}
+
+.room-upgrade-features li i {
+    color: #10b981;
+    margin-right: 8px;
+}
+
+/* Price display for single adult */
+.single-price {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+}
+.amenities-comma-list {
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  margin: 10px 0;
+}
+
+.amenities-comma-list p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #495057;
+}
+
+/* Auto carousel animation */
+.auto-carousel .hotel-carousel-inner {
+  animation: autoCarousel 20s infinite;
+}
+
+@keyframes autoCarousel {
+  0%, 20% { transform: translateX(0); }
+  25%, 45% { transform: translateX(-100%); }
+  50%, 70% { transform: translateX(-200%); }
+  75%, 95% { transform: translateX(-300%); }
+  100% { transform: translateX(0); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .room-card-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .room-photo-carousel {
+    height: 250px;
+  }
+  
+  .hotel-card-container {
+    height: auto;
+    flex-direction: column;
+  }
+  
+  .hotel-card-container .w-1\/3 {
+    width: 100%;
+    height: 200px;
+  }
+  
+  .hotel-card-container .w-2\/3 {
+    width: 100%;
+  }
+  
+  .hotel-carousel-control {
+    opacity: 1;
+  }
+}
+</style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Header with Logo Only -->
+<header class="bg-white shadow-sm">
+  <div class="container mx-auto px-4 py-4">
+    <div class="flex justify-center items-center">
+      <div class="flex items-center space-x-2">
+        <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+          <img src="https://i.ibb.co/rKH8BQr9/images-3.png"></img>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800"><span class="text-orange-500">Kakkson Hotels</span></h1>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main Container -->
+<div class="container mx-auto px-4 py-8">
+
+  <!-- Search Form -->
+  <!-- CHANGE from md:grid-cols-4 to md:grid-cols-3 -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+    <select id="location-search" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      <option value="">All Locations</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
+    <input type="date" id="checkin" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+  </div>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
+    <input type="date" id="checkout" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+  </div>
+  <!-- GUESTS SECTION REMOVED HERE -->
+</div>
+
+    <button onclick="searchHotels()" class="w-full bg-orange-500 text-white py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transition duration-200 shadow-md">
+      <i class="fas fa-search mr-2"></i>Search Hotels
+    </button>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="mb-8">
+    <div class="progress-bar">
+      <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+    </div>
+    <div class="flex justify-between text-sm text-gray-600 mt-2">
+      <span>Search</span>
+      <span>Select Room</span>
+      <span>Guest Details</span>
+      <span>Payment</span>
+      <span>Confirmation</span>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="flex flex-col lg:flex-row gap-8">
+
+    <!-- Filters Sidebar - Desktop -->
+    <div class="lg:w-1/4">      
+<div class="filter-section sticky top-4">
+        <h3 class="font-semibold text-gray-800 mb-4">Filters</h3>
+        
+        <div class="mb-6">
+          <h4 class="font-medium text-gray-700 mb-3">Location</h4>
+          <div class="space-y-2 max-h-48 overflow-y-auto">
+            <label class="flex items-center">
+              <input type="radio" name="location-filter" value="" class="mr-3" onchange="applySidebarFilters()" checked>
+              <span>All Locations</span>
+            </label>
+            <div id="location-filters">
+              <!-- Location filters will be loaded here -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <h4 class="font-medium text-gray-700 mb-3">Price Range (per night)</h4>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="price-filter" value="0-2000" class="mr-3" onchange="applySidebarFilters()">
+              <span>Under ₹2,000</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="price-filter" value="2000-5000" class="mr-3" onchange="applySidebarFilters()">
+              <span>₹2,000 - ₹5,000</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="price-filter" value="5000-10000" class="mr-3" onchange="applySidebarFilters()">
+              <span>₹5,000 - ₹10,000</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="price-filter" value="10000+" class="mr-3" onchange="applySidebarFilters()">
+              <span>Over ₹10,000</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="price-filter" value="" class="mr-3" onchange="applySidebarFilters()" checked>
+              <span>Any Price</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotels & Rooms Content -->
+    <div class="lg:w-3/4">
+      
+      <!-- Hotels List -->
+      <div id="hotels-section">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold text-gray-800">Available Hotels</h2>
+          <span id="results-count" class="text-gray-600">0 hotels found</span>
+        </div>
+
+        <div id="hotels-container" class="space-y-6">
+          <!-- Hotels will be loaded here -->
+          <div class="text-center py-12">
+            <i class="fas fa-search text-gray-300 text-6xl mb-4"></i>
+            <p class="text-gray-500 text-lg">Search for hotels to see results</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Selection -->
+      <div id="rooms-section" style="display: none;">
+        <div class="flex items-center mb-6">
+          <button onclick="showHotels()" class="flex items-center text-blue-600 hover:text-blue-800 mr-4">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Hotels
+          </button>
+          <h2 class="text-xl font-bold text-gray-800">Select Your Room</h2>
+        </div>
+        <div id="rooms-container">
+          <!-- Rooms will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Guest Details -->
+      <div id="guest-section" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <div class="flex items-center mb-6">
+            <button onclick="showRooms()" class="flex items-center text-blue-600 hover:text-blue-800 mr-4">
+              <i class="fas fa-arrow-left mr-2"></i>Back to Rooms
+            </button>
+            <h2 class="text-xl font-bold text-gray-800">Guest Details</h2>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-4">Booking Summary</h3>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Hotel:</span>
+                  <span id="summary-hotel" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Room:</span>
+                  <span id="summary-room" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Dates:</span>
+                  <span id="summary-dates" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Guests:</span>
+                  <span id="summary-guests" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Meal Plan:</span>
+                  <span id="summary-mealplan" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Room Charges:</span>
+                  <span id="summary-room-charges" class="font-medium"></span>
+                </div>
+                <!-- Detailed breakdown will be inserted here -->
+                <div id="guest-detailed-breakdown"></div>
+                <div class="border-t pt-2 mt-2">
+                  <div class="flex justify-between text-lg font-bold">
+                    <span>Total:</span>
+                    <span id="summary-total" class="text-green-600"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Addons Selection -->
+              <div class="mt-6">
+                <h3 class="font-semibold text-gray-800 mb-4">Add Extra Services</h3>
+                <div id="addons-container">
+                  <!-- Addons will be loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-4">Contact Information</h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                  <input type="text" id="guest-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your full name" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                  <input type="email" id="guest-email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your email" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                  <input type="tel" id="guest-phone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your phone number" required>
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <h3 class="font-semibold text-gray-800 mb-4">Special Requests</h3>
+                <textarea id="special-requests" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Any special requests..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="showPaymentSectionWithBreakdown()" class="w-full bg-green-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition duration-200">
+            Continue to Payment
+          </button>
+        </div>
+      </div>
+
+      <!-- Payment Section -->
+      <div id="payment-section" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <div class="flex items-center mb-6">
+            <button onclick="showGuestSection()" class="flex items-center text-blue-600 hover:text-blue-800 mr-4">
+              <i class="fas fa-arrow-left mr-2"></i>Back to Guest Details
+            </button>
+            <h2 class="text-xl font-bold text-gray-800">Payment Method</h2>
+          </div>
+
+          <!-- Payment Configuration Status -->
+          <div id="payment-config-status" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center">
+              <i class="fas fa-credit-card text-blue-500 mr-3 text-xl"></i>
+              <div>
+                <h4 class="font-semibold text-blue-800" id="config-status-title">Checking payment options...</h4>
+                <p class="text-blue-700 text-sm mt-1" id="config-status-desc">
+                  We're checking available payment methods for <strong id="current-hotel-name"></strong>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Convenience Fee Notice -->
+          <div id="convenience-fee-notice" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg" style="display: none;">
+            <div class="flex items-start">
+              <i class="fas fa-info-circle text-yellow-500 mt-1 mr-3"></i>
+              <div>
+                <h4 class="font-semibold text-yellow-800 text-sm">Convenience Fee Applied</h4>
+                <p class="text-yellow-700 text-xs mt-1">
+                  A convenience fee of 2% + 18% GST is applied for online payments to cover payment gateway charges.
+                  No convenience fee for UPI QR code payments.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-4">Booking Summary</h3>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Hotel:</span>
+                  <span id="payment-summary-hotel" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Room:</span>
+                  <span id="payment-summary-room" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Dates:</span>
+                  <span id="payment-summary-dates" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-gray-600">Guests:</span>
+                  <span id="payment-summary-guests" class="font-medium"></span>
+                </div>
+                <!-- Detailed breakdown will be inserted here -->
+                <div id="detailed-payment-breakdown"></div>
+                <div class="border-t pt-2 mt-2">
+                  <div class="flex justify-between text-lg font-bold">
+                    <span>Total Amount:</span>
+                    <span id="payment-summary-total" class="text-green-600"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-4">Select Payment Method</h3>
+              
+              <!-- UPI QR Payment -->
+              <!-- UPI QR Payment - DISABLED -->
+<div class="payment-option disabled" onclick="selectPayment('upi')">
+  <div class="flex items-center">
+    <input type="radio" name="payment-method" value="upi" class="mr-3" disabled>
+    <div class="flex items-center justify-between w-full">
+      <div>
+        <h4 class="font-semibold">UPI QR Code Payment</h4>
+        <p class="text-sm text-gray-600">Scan QR code to pay instantly - No convenience fee</p>
+        <div class="mt-1">
+          <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Coming Soon</span>
+        </div>
+      </div>
+      <div class="text-green-600 font-semibold">
+        No Extra Charges
+      </div>
+    </div>
+  </div>
+  <div id="upi-qr-container" style="display: none;" class="mt-3 text-center">
+    <img id="hotel-qr-code" class="qr-code" src="" alt="UPI QR Code">
+    <p class="text-sm text-gray-600 mt-2">Scan this QR code with any UPI app to pay</p>
+    <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+      <p class="text-sm font-semibold">Amount to pay: ₹<span id="upi-amount">0</span></p>
+    </div>
+  </div>
+</div>
+
+              <!-- Razorpay Online Payment Options -->
+              <div id="razorpay-options" style="display: none;">
+                <div class="border-t pt-4 mt-4">
+                  <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-lock text-green-500 mr-2"></i>
+                    Secure Online Payment
+                  </h4>
+                  
+                  <div class="payment-option" onclick="selectPayment('razorpay_card')">
+                    <div class="flex items-center">
+                      <input type="radio" name="payment-method" value="razorpay_card" class="mr-3">
+                      <div class="flex items-center justify-between w-full">
+                        <div>
+                          <h4 class="font-semibold">Credit/Debit Card</h4>
+                          <p class="text-sm text-gray-600">Visa, Mastercard, RuPay, American Express</p>
+                        </div>
+                        
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="payment-option" onclick="selectPayment('razorpay_upi')">
+                    <div class="flex items-center">
+                      <input type="radio" name="payment-method" value="razorpay_upi" class="mr-3">
+                      <div>
+                        <h4 class="font-semibold">UPI & Net Banking</h4>
+                        <p class="text-sm text-gray-600">Instant payment via UPI ID or Net Banking</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="payment-option" onclick="selectPayment('razorpay_wallet')">
+                    <div class="flex items-center">
+                      <input type="radio" name="payment-method" value="razorpay_wallet" class="mr-3">
+                      <div>
+                        <h4 class="font-semibold">Wallets</h4>
+                        <p class="text-sm text-gray-600">Paytm, PhonePe, MobiKwik, and more</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Gateway Information -->
+              <div id="payment-gateway-info" class="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div class="flex items-start">
+                  <i class="fas fa-shield-alt text-gray-500 mt-1 mr-3"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-800 text-sm">Secure Payment</h4>
+                    <p class="text-gray-600 text-xs mt-1">
+                      All payments are secured and encrypted. Your financial information is never stored on our servers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <button onclick="processPayment()" class="w-full bg-green-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition duration-200 flex items-center justify-center">
+                  <i class="fas fa-lock mr-2"></i>
+                  Confirm Booking & Pay
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirmation Section -->
+      <div id="confirmation-section" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-check text-white text-3xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Booking Confirmed!</h2>
+            <p class="text-gray-600">Your booking has been successfully confirmed</p>
+            <div id="email-status" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg" style="display: none;">
+              <i class="fas fa-envelope text-blue-500 mr-2"></i>
+              <span id="email-status-text">Sending voucher...</span>
+            </div>
+          </div>
+
+          <div id="voucher-content" class="voucher-container">
+            <!-- Voucher content will be loaded here -->
+          </div>
+
+          <div class="flex gap-4 mt-6">
+            <button onclick="downloadPDFVoucher()" class="flex-1 bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition duration-200">
+              <i class="fas fa-download mr-2"></i>Download PDF Voucher
+            </button>
+            <button onclick="sendEmailVoucher()" class="flex-1 bg-green-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition duration-200">
+              <i class="fas fa-paper-plane mr-2"></i>Email Voucher
+            </button>
+            <button onclick="newBooking()" class="flex-1 bg-orange-500 text-white py-4 rounded-lg font-semibold text-lg hover:bg-orange-600 transition duration-200">
+              <i class="fas fa-plus mr-2"></i>New Booking
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Amenities Modal -->
+<div id="amenities-modal" class="amenities-modal">
+  <div class="amenities-modal-content">
+    <div class="amenities-modal-header">
+      <h3 class="amenities-modal-title" id="amenities-modal-title">Room Amenities</h3>
+      <button class="amenities-close-btn" onclick="closeAmenitiesModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="amenities-grid" id="amenities-list">
+      <!-- Amenities will be populated here -->
+    </div>
+  </div>
+</div>
+<!-- Footer -->
+<footer class="footer" style="background-color: #ff9800; color: white; padding: 20px 0; margin-top: 40px; border-top: 3px solid #f57c00;">
+  <div class="footer-content" style="max-width: 1400px; margin: 0 auto; padding: 0 20px; text-align: center;">
+    <p class="footer-text" style="font-size: 14px; margin: 0; opacity: 0.9;">
+      &copy; 2025 Kakkson Booking. 
+      <strong style="color: #fff; font-weight: 700;">Developed by SYSTEMS SOLUTION</strong>
+    </p>
+  </div>
+</footer>
+
+<script>
+// Supabase Configuration
+const { createClient } = supabase;
+const SUPABASE_URL = 'https://ctpgmhixlaxnhhrnkazz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0cGdtaGl4bGF4bmhocm5rYXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNTcwNDMsImV4cCI6MjA3NDYzMzA0M30.AI2UMryv-Whu2wVpQ8JeLWVThLVQhsJSero6bzgn8oA';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Edge Function URLs
+const RAZORPAY_ORDER_FUNCTION = 'https://ctpgmhixlaxnhhrnkazz.supabase.co/functions/v1/razorpay-order';
+const VERIFY_PAYMENT_FUNCTION = 'https://ctpgmhixlaxnhhrnkazz.supabase.co/functions/v1/verify-payment';
+const SEND_VOUCHER_EMAIL_FUNCTION = 'https://ctpgmhixlaxnhhrnkazz.supabase.co/functions/v1/send-voucher-email';
+
+// Global State
+let hotels = [];
+let selectedHotel = null;
+let selectedRoom = null;
+let selectedRate = 0;
+let selectedNights = 0;
+let selectedCheckin, selectedCheckout;
+let selectedNumRooms = 1;
+let selectedMealPlan = 'ep';
+let selectedAdults = 0;
+let selectedChildren = 0;
+let selectedInfants = 0;
+let allLocations = [];
+let currentBooking = null;
+let roomCharges = 0;
+let addonsCharges = 0;
+let taxAmount = 0;
+let totalAmount = 0;
+let selectedAddons = [];
+let selectedPaymentMethod = '';
+let applicableOffers = [];
+let offerDiscount = 0;
+let convenienceFee = 0;
+let commission = 0;
+let gstOnCommission = 0;
+let selectedChildrenAbove6 = 0;
+let selectedChildrenBelow6 = 0;
+// Initialize
+window.onload = function() {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const format = (date) => date.toISOString().split('T')[0];
+
+  document.getElementById('checkin').value = format(today);
+  document.getElementById('checkout').value = format(tomorrow);
+  document.getElementById('checkin').min = format(today);
+
+  loadHotelData();
+};
+
+// Load hotels from Supabase
+async function loadHotelData() {
+  try {
+    showToast("Loading hotels...", "info");
+    const { data, error } = await supabaseClient.from('hotels').select('*');
+    if (error) throw error;
+    
+    hotels = data.map(hotel => ({
+      ...hotel,
+      roomTypes: hotel.room_types || [],
+      roomDetails: hotel.room_details || {},
+      inventory: hotel.inventory || {},
+      rates: hotel.rates || {},
+      offers: hotel.offers || [],
+      addons: hotel.addons || [],
+      photos: hotel.photos ? 
+        (Array.isArray(hotel.photos) ? hotel.photos : Object.values(hotel.photos)) : 
+        [],
+      logo: hotel.logo || '',
+      qr_code: hotel.qr_code || '',
+      tax_rate: hotel.tax_rate || 5.0,
+      active_payment_gateway: hotel.active_payment_gateway || 'upi',
+      razorpay_key_id: hotel.razorpay_key_id || '',
+      razorpay_key_secret: hotel.razorpay_key_secret || ''
+    }));
+    
+    // Extract unique locations from database
+    allLocations = [...new Set(hotels.map(hotel => hotel.location).filter(Boolean))];
+    
+    // Populate location filters
+    populateLocationFilters();
+    
+    console.log('Hotels loaded:', hotels.length);
+    console.log('Sample hotel room types:', hotels[0]?.roomTypes);
+    showToast("Hotels loaded successfully!", "success");
+  } catch (error) {
+    console.error('Error loading hotels:', error);
+    showToast('Error loading hotel data', 'error');
+  }
+}
+
+// Populate location filters
+function populateLocationFilters() {
+  const locationSearch = document.getElementById('location-search');
+  const locationFilters = document.getElementById('location-filters');
+  
+  // Clear existing options
+  locationSearch.innerHTML = '<option value="">All Locations</option>';
+  locationFilters.innerHTML = '';
+  
+  // Populate location search dropdown
+  allLocations.forEach(location => {
+    const option = document.createElement('option');
+    option.value = location;
+    option.textContent = location;
+    locationSearch.appendChild(option);
+  });
+  
+  // Populate location filters
+  allLocations.forEach(location => {
+    const label = document.createElement('label');
+    label.className = 'flex items-center';
+    label.innerHTML = `
+      <input type="radio" name="location-filter" value="${location}" class="mr-3" onchange="applySidebarFilters()">
+      <span>${location}</span>
+    `;
+    locationFilters.appendChild(label);
+  });
+}
+
+// Calculate Razorpay convenience fee with minimum commission
+function calculateConvenienceFee(amount) {
+    const minimumCommission = 0.03;
+    const commissionRate = 0.02; // 2%
+    const gstRate = 0.18; // 18%
+    
+    // Calculate commission with minimum threshold
+    let commission = Math.max(amount * commissionRate, minimumCommission);
+    let gstOnCommission = commission * gstRate;
+    const totalConvenienceFee = commission + gstOnCommission;
+    
+    return {
+        commission: commission,
+        gstOnCommission: gstOnCommission,
+        totalConvenienceFee: totalConvenienceFee,
+        finalAmount: amount + totalConvenienceFee
+    };
+}
+
+// Search Hotels - Remove references to deleted guest fields
+function searchHotels() {
+  selectedCheckin = document.getElementById('checkin').value;
+  selectedCheckout = document.getElementById('checkout').value;
+  
+  // REMOVE THESE LINES - they reference fields that no longer exist
+  // selectedAdults = parseInt(document.getElementById('adults').value);
+  // selectedChildrenAbove6 = parseInt(document.getElementById('children-above-6').value);
+  // selectedChildrenBelow6 = parseInt(document.getElementById('children-below-6').value);
+  
+  // USE DEFAULT VALUES instead
+  selectedAdults = 0;
+  selectedChildrenAbove6 = 0;
+  selectedChildrenBelow6 = 0;
+  
+  if (!selectedCheckin || !selectedCheckout) {
+    showToast('Please select check-in and check-out dates', 'error');
+    return;
+  }
+
+  if (new Date(selectedCheckin) >= new Date(selectedCheckout)) {
+    showToast('Check-out date must be after check-in date', 'error');
+    return;
+  }
+
+  updateProgress(20);
+  showHotels();
+  renderHotels();
+}
+// Apply sidebar filters
+function applySidebarFilters() {
+  if (!selectedCheckin || !selectedCheckout) {
+    showToast('Please search with dates first', 'warning');
+    return;
+  }
+  showHotels();
+  renderHotels();
+}
+
+// NEW: Optimized Hotel Carousel Navigation
+function navigateHotelCarousel(button, direction) {
+  const carousel = button.closest('.hotel-carousel');
+  const inner = carousel.querySelector('.hotel-carousel-inner');
+  const items = carousel.querySelectorAll('.hotel-carousel-item');
+  const indicators = carousel.querySelectorAll('.hotel-carousel-indicator');
+  const currentTransform = inner.style.transform || 'translateX(0px)';
+  const currentIndex = parseInt(currentTransform.match(/translateX\((-?\d+)px\)/)?.[1] || 0) / 100;
+  const newIndex = currentIndex - direction;
+  
+  if (newIndex >= 0 && newIndex < items.length) {
+    inner.style.transform = `translateX(${-newIndex * 100}%)`;
+    updateHotelCarouselIndicators(indicators, newIndex);
+  }
+}
+
+function goToHotelCarouselSlide(button, index) {
+  const carousel = button.closest('.hotel-carousel');
+  const inner = carousel.querySelector('.hotel-carousel-inner');
+  const indicators = carousel.querySelectorAll('.hotel-carousel-indicator');
+  
+  inner.style.transform = `translateX(${-index * 100}%)`;
+  updateHotelCarouselIndicators(indicators, index);
+}
+
+function updateHotelCarouselIndicators(indicators, activeIndex) {
+  indicators.forEach((indicator, index) => {
+    indicator.classList.toggle('active', index === activeIndex);
+  });
+}
+
+// Render Hotels List with Optimized Carousel
+function renderHotels() {
+  const container = document.getElementById('hotels-container');
+  
+  // Get filter values
+  const searchLocation = document.getElementById('location-search').value;
+  const sidebarLocation = document.querySelector('input[name="location-filter"]:checked')?.value || '';
+  const sidebarPrice = document.querySelector('input[name="price-filter"]:checked')?.value || '';
+  
+  const selectedLocation = sidebarLocation || searchLocation;
+  const selectedPrice = sidebarPrice;
+  
+  let filteredHotels = hotels;
+  
+  // Filter by location
+  if (selectedLocation) {
+    filteredHotels = hotels.filter(hotel => hotel.location === selectedLocation);
+  }
+  
+  // Filter by price
+  if (selectedPrice) {
+    const [min, max] = selectedPrice.split('-').map(val => val === '+' ? Infinity : parseInt(val));
+    filteredHotels = filteredHotels.filter(hotel => {
+      const price = getStartingPrice(hotel);
+      if (max === Infinity) return price >= min;
+      return price >= min && price <= max;
+    });
+  }
+
+  if (filteredHotels.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-12">
+        <i class="fas fa-hotel text-gray-300 text-6xl mb-4"></i>
+        <p class="text-gray-500 text-lg">No hotels found for your search criteria</p>
+        <button onclick="clearAllFilters()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+          Clear All Filters
+        </button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = filteredHotels.map(hotel => {
+      const availableRooms = getTotalAvailableRooms(hotel);
+      const hotelPhotos = hotel.photos && hotel.photos.length > 0 ? 
+        hotel.photos : 
+        ['https://via.placeholder.com/400x250?text=Hotel+Image'];
+      
+      return `
+        <div class="booking-card bg-white rounded-2xl shadow-md overflow-hidden hotel-card-container">
+          <div class="flex h-full">
+            <div class="w-1/3">
+              <div class="hotel-carousel">
+                <div class="hotel-carousel-inner">
+                  ${hotelPhotos.map((photo, index) => `
+                    <div class="hotel-carousel-item">
+                      <div class="hotel-image">
+                        <img src="${photo}" alt="Hotel photo ${index + 1}" onerror="this.src='https://via.placeholder.com/400x250?text=Hotel+Image'">
+                      </div>
+                      ${index === 0 && hotel.offers && hotel.offers.length > 0 ? `
+                        <div class="hotel-carousel-badge">
+                          <i class="fas fa-tag mr-1"></i>${hotel.offers.length} Offer${hotel.offers.length > 1 ? 's' : ''}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+                ${hotelPhotos.length > 1 ? `
+                  
+                  <div class="hotel-carousel-indicators">
+                    ${hotelPhotos.map((_, index) => `
+                      <button class="hotel-carousel-indicator ${index === 0 ? 'active' : ''}" onclick="goToHotelCarouselSlide(this, ${index})"></button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+            <div class="w-2/3 p-6">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="text-xl font-bold text-gray-800 mb-1">${hotel.name}</h3>
+                  <p class="text-gray-600 mb-2">
+                    <i class="fas fa-map-marker-alt mr-2"></i>${hotel.location || 'City Center'}
+                  </p>
+                  <div class="flex items-center space-x-4 text-sm text-gray-600">
+                    ${hotel.offers && hotel.offers.length > 0 ? '<span class="offer-badge">Special Offers</span>' : ''}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="price-tag mb-2">
+                    From ₹${getStartingPrice(hotel)}/night
+                  </div>
+                  <div class="text-sm text-green-600">
+                    <i class="fas fa-check-circle mr-1"></i>${availableRooms} rooms
+                  </div>
+                </div>
+              </div>
+              <button onclick="selectHotel('${hotel.name}')" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition duration-200">
+                View ${hotel.roomTypes?.length || 0} Room Types
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('results-count').textContent = `${filteredHotels.length} hotels found`;
+}
+
+// Clear all filters
+function clearAllFilters() {
+  document.getElementById('location-search').value = '';
+  document.querySelectorAll('input[name="location-filter"]').forEach(radio => {
+    if (radio.value === '') radio.checked = true;
+  });
+  document.querySelectorAll('input[name="price-filter"]').forEach(radio => {
+    if (radio.value === '') radio.checked = true;
+  });
+  renderHotels();
+}
+
+// Select Hotel and Show Rooms
+function selectHotel(hotelName) {
+  selectedHotel = hotels.find(h => h.name === hotelName);
+  
+  console.log('Selected Hotel:', selectedHotel);
+  console.log('Room Types:', selectedHotel?.roomTypes);
+  console.log('Room Details:', selectedHotel?.roomDetails);
+  
+  if (!selectedHotel) {
+    showToast('Hotel not found', 'error');
+    return;
+  }
+
+  if (!selectedHotel.roomTypes || selectedHotel.roomTypes.length === 0) {
+    showToast('No room types available for this hotel', 'error');
+    return;
+  }
+
+  updateProgress(40);
+  showRoomsSection();
+  renderRooms();
+}
+
+// Get extra adult rate for a room
+function getExtraAdultRate(hotel, roomType, checkinStr, checkoutStr) {
+  if (!checkinStr || !checkoutStr) return 0;
+  
+  const dates = getDatesBetween(checkinStr, checkoutStr);
+  let totalRate = 0;
+  let nights = dates.length;
+
+  dates.forEach(dateStr => {
+    let rate = hotel.rates[dateStr]?.[roomType]?.extra_adult || 0;
+    totalRate += rate;
+  });
+
+  return nights > 0 ? Math.round(totalRate / nights) : 0;
+}
+
+// Get applicable offers for a room
+function getApplicableOffers(hotel, roomType) {
+  if (!hotel.offers || !Array.isArray(hotel.offers)) return [];
+  
+  const today = new Date().toISOString().split('T')[0];
+  return hotel.offers.filter(offer => {
+    // Check date validity
+    if (offer.start_date && offer.start_date > today) return false;
+    if (offer.end_date && offer.end_date < today) return false;
+    
+    // Check room type applicability
+    if (offer.room_types && offer.room_types.length > 0) {
+      if (!offer.room_types.includes(roomType)) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+// UPDATE: Enhanced bidirectional occupancy logic
+function updateRoomOccupancy(roomType) {
+  const roomDetail = selectedHotel.roomDetails[roomType] || {};
+  const maxAdults = roomDetail.maxAdults || 4;
+  const maxOccupants = roomDetail.maxOccupants || 5;
+  
+  const adultsSelect = document.querySelector(`.adults-select[data-room-type="${roomType}"]`);
+  const childrenAbove6Select = document.querySelector(`.children-above-6-select[data-room-type="${roomType}"]`);
+  const childrenBelow6Select = document.querySelector(`.children-below-6-select[data-room-type="${roomType}"]`);
+  
+  selectedAdults = parseInt(adultsSelect.value);
+  selectedChildrenAbove6 = parseInt(childrenAbove6Select.value);
+  selectedChildrenBelow6 = parseInt(childrenBelow6Select.value);
+  
+  // Calculate limits
+  const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+  const totalOccupants = totalAdultEquivalents + selectedChildrenBelow6;
+  
+  // Update Adults dropdown: Max = maxAdults - selectedChildrenAbove6
+  const maxAdultsPossible = maxAdults - selectedChildrenAbove6;
+  adultsSelect.innerHTML = Array.from({length: maxAdultsPossible + 1}, (_, i) => 
+    `<option value="${i}" ${i === selectedAdults ? 'selected' : ''}>${i}</option>`
+  ).join('');
+  
+  // Update Children Above 6 dropdown: Max = maxAdults - selectedAdults
+  const maxChildrenAbove6Possible = maxAdults - selectedAdults;
+  childrenAbove6Select.innerHTML = Array.from({length: maxChildrenAbove6Possible + 1}, (_, i) => 
+    `<option value="${i}" ${i === selectedChildrenAbove6 ? 'selected' : ''}>${i}</option>`
+  ).join('');
+  
+  // Update Children Below 6 dropdown: Max = maxOccupants - totalAdultEquivalents
+  const maxChildrenBelow6Possible = maxOccupants - totalAdultEquivalents;
+  childrenBelow6Select.innerHTML = Array.from({length: maxChildrenBelow6Possible + 1}, (_, i) => 
+    `<option value="${i}" ${i === selectedChildrenBelow6 ? 'selected' : ''}>${i}</option>`
+  ).join('');
+  
+  // Ensure current selections don't exceed new limits
+  if (selectedAdults > maxAdultsPossible) {
+    selectedAdults = maxAdultsPossible;
+    adultsSelect.value = selectedAdults;
+  }
+  
+  if (selectedChildrenAbove6 > maxChildrenAbove6Possible) {
+    selectedChildrenAbove6 = maxChildrenAbove6Possible;
+    childrenAbove6Select.value = selectedChildrenAbove6;
+  }
+  
+  if (selectedChildrenBelow6 > maxChildrenBelow6Possible) {
+    selectedChildrenBelow6 = maxChildrenBelow6Possible;
+    childrenBelow6Select.value = selectedChildrenBelow6;
+  }
+  
+  updateRoomRateDisplay(roomType);
+}
+
+// UPDATE: Children Above 6 selection with bidirectional logic
+function updateChildrenAbove6Selection(roomType) {
+  const childrenAbove6Select = document.querySelector(`.children-above-6-select[data-room-type="${roomType}"]`);
+  selectedChildrenAbove6 = parseInt(childrenAbove6Select.value);
+  updateRoomOccupancy(roomType);
+}
+
+// UPDATE: Children Below 6 selection with bidirectional logic
+function updateChildrenBelow6Selection(roomType) {
+  const childrenBelow6Select = document.querySelector(`.children-below-6-select[data-room-type="${roomType}"]`);
+  selectedChildrenBelow6 = parseInt(childrenBelow6Select.value);
+  
+  // After changing children below 6, update all dropdowns
+  updateRoomOccupancy(roomType);
+}
+
+function resetOccupancy(roomType) {
+  selectedAdults = 0;
+  selectedChildrenAbove6 = 0;
+  selectedChildrenBelow6 = 0;
+  
+  const adultsSelect = document.querySelector(`.adults-select[data-room-type="${roomType}"]`);
+  const childrenAbove6Select = document.querySelector(`.children-above-6-select[data-room-type="${roomType}"]`);
+  const childrenBelow6Select = document.querySelector(`.children-below-6-select[data-room-type="${roomType}"]`);
+  
+  if (adultsSelect) adultsSelect.value = 0;
+  if (childrenAbove6Select) childrenAbove6Select.value = 0;
+  if (childrenBelow6Select) childrenBelow6Select.value = 0;
+  
+  updateRoomOccupancy(roomType);
+}
+
+// Update room rate display based on occupancy
+function updateRoomRateDisplay(roomType) {
+    const mealPlan = selectedMealPlan;
+    
+    // Calculate rate based on CURRENT occupancy
+    const rate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, mealPlan, selectedAdults, selectedChildrenAbove6, selectedChildrenBelow6);
+    
+    const rateDisplay = document.getElementById(`room-rate-${roomType.replace(/\s+/g, '-')}`);
+    
+    if (!rateDisplay) return;
+    
+    // Store both single and current rates
+    rateDisplay.setAttribute('data-current-rate', rate);
+    rateDisplay.setAttribute('data-single-rate', calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, mealPlan, 1, 0, 0));
+    
+    // Update display
+    rateDisplay.innerHTML = `
+        <span class="current-price">₹${rate}</span>
+        <span class="price-period">/ night</span>
+    `;
+    
+    // Update single price note based on occupancy
+    const singlePriceNote = rateDisplay.closest('.price-section').querySelector('.single-price-note');
+    if (singlePriceNote) {
+        if (selectedAdults === 1 && selectedChildrenAbove6 === 0 && selectedChildrenBelow6 === 0) {
+            singlePriceNote.innerHTML = '<i class="fas fa-info-circle mr-1"></i>Single adult rate';
+        } else {
+            const totalPeople = selectedAdults + selectedChildrenAbove6 + selectedChildrenBelow6;
+            singlePriceNote.innerHTML = `
+                <i class="fas fa-info-circle mr-1"></i>
+                Rate for ${totalPeople} person${totalPeople > 1 ? 's' : ''}
+                (${selectedAdults} adult${selectedAdults > 1 ? 's' : ''}
+                ${selectedChildrenAbove6 > 0 ? `, ${selectedChildrenAbove6} child${selectedChildrenAbove6 > 1 ? 'ren' : ''} 6+` : ''}
+                ${selectedChildrenBelow6 > 0 ? `, ${selectedChildrenBelow6} child${selectedChildrenBelow6 > 1 ? 'ren' : ''} <6` : ''})
+            `;
+        }
+    }
+    
+    // Show extra charges if applicable
+    showExtraCharges(roomType, rate);
+}
+
+function showExtraCharges(roomType, currentRate) {
+    const singleRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, selectedMealPlan, 1, 0, 0);
+    
+    if (currentRate > singleRate) {
+        const extraChargesContainer = document.querySelector(`[data-room-type="${roomType}"] .extra-charges`);
+        if (!extraChargesContainer) return;
+        
+        const extraAdultRate = getExtraAdultRate(selectedHotel, roomType, selectedCheckin, selectedCheckout);
+        const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+        let extraAdultEquivalents = 0;
+        
+        // Calculate extra charges
+        if (selectedAdults === 1 && selectedChildrenAbove6 >= 1 && totalAdultEquivalents <= 2) {
+            extraAdultEquivalents = 1;
+        } else if (totalAdultEquivalents > 2) {
+            extraAdultEquivalents = totalAdultEquivalents - 2;
+        }
+        
+        if (extraAdultEquivalents > 0) {
+            extraChargesContainer.innerHTML = `
+                <div class="text-xs text-gray-600 mt-1">
+                    <i class="fas fa-plus-circle mr-1"></i>
+                    Includes extra person charges (₹${extraAdultRate} × ${extraAdultEquivalents})
+                </div>
+            `;
+            extraChargesContainer.style.display = 'block';
+        }
+    }
+}
+
+// Calculate room rate based on occupancy
+// UPDATE: Calculate room rate based on 3-category occupancy
+function calculateRoomRate(hotel, roomType, checkinStr, checkoutStr, mealPlan, adults, childrenAbove6, childrenBelow6) {
+    if (!checkinStr || !checkoutStr) {
+        const roomDetail = hotel.roomDetails[roomType] || {};
+        return mealPlan === 'ep' ? (roomDetail.basePrice || 1500) : (roomDetail.cpPrice || 1800);
+    }
+    
+    const dates = getDatesBetween(checkinStr, checkoutStr);
+    let totalRate = 0;
+    let nights = dates.length;
+
+    dates.forEach(dateStr => {
+        let rate = 0;
+        let extraPersonCharges = 0;
+        
+        // Children above 6 count as "adult equivalents" for rate calculation
+        const totalAdultEquivalents = adults + childrenAbove6;
+        
+        // Get rates for this date
+        const singleRate = hotel.rates[dateStr]?.[roomType]?.[mealPlan === 'ep' ? 'single_ep' : 'single_cp'] || 0;
+        const doubleRate = hotel.rates[dateStr]?.[roomType]?.[mealPlan] || 0;
+        const extraAdultRate = hotel.rates[dateStr]?.[roomType]?.extra_adult || 0;
+        
+        // START WITH SINGLE OCCUPANCY RATE
+        if (singleRate > 0) {
+            rate = singleRate;
+        } else {
+            // Fallback to room detail prices
+            const roomDetail = hotel.roomDetails[roomType] || {};
+            rate = mealPlan === 'ep' ? (roomDetail.basePrice || 1500) : (roomDetail.cpPrice || 1800);
+        }
+        
+        // NOW ADD CHARGES BASED ON OCCUPANCY
+        
+        // ========== FIXED: 1 Adult + 1 Child (6+) ==========
+        if (adults === 1 && childrenAbove6 === 1 && childrenBelow6 === 0) {
+            // ALWAYS use single rate + extra adult charge for this combination
+            if (singleRate > 0) {
+                rate = singleRate;
+            }
+            if (extraAdultRate > 0) {
+                extraPersonCharges = extraAdultRate;
+            }
+        }
+        // ========== END FIX ==========
+        
+        // Case 1: More than 2 adult equivalents
+        else if (totalAdultEquivalents > 2) {
+            // Use double rate as base, add extra for additional adult equivalents
+            if (doubleRate > 0) {
+                rate = doubleRate;
+            }
+            extraPersonCharges = Math.max(0, totalAdultEquivalents - 2) * extraAdultRate;
+        }
+        // Case 2: Exactly 2 adult equivalents (2 adults OR 1 adult + 1 child 6+ with children below 6)
+        else if (totalAdultEquivalents === 2) {
+            if (doubleRate > 0) {
+                rate = doubleRate;
+            }
+            // For 1 adult + 1 child 6+ + children below 6, use double rate if available
+            // (This handles 1 adult + 1 child 6+ + 1 child <6)
+        }
+        // Case 3: Single adult (already set to single rate)
+        // Case 4: Children below 6 only (no extra charge)
+        
+        // Special case: Children below 6 with meal plan (if applicable)
+        if (childrenBelow6 > 0 && mealPlan === 'cp') {
+            // Add child meal charges if needed
+            // const childMealRate = hotel.rates[dateStr]?.[roomType]?.child_meal || 0;
+            // extraPersonCharges += childrenBelow6 * childMealRate;
+        }
+        
+        totalRate += (rate + extraPersonCharges);
+    });
+
+    return nights > 0 ? Math.round(totalRate / nights) : (mealPlan === 'ep' ? 1500 : 1800);
+}
+// Update room rate when meal plan changes
+function updateRoomRate(roomType) {
+  updateRoomRateDisplay(roomType);
+}
+
+// NEW: Render Available Rooms with Enhanced Occupancy Logic
+// UPDATE: Render Available Rooms with 3-category occupancy (modified version)
+function renderRooms() {
+  const container = document.getElementById('rooms-container');
+  
+  if (!selectedHotel || !selectedHotel.roomTypes || selectedHotel.roomTypes.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <i class="fas fa-bed text-gray-300 text-4xl mb-4"></i>
+        <p class="text-gray-500 text-lg">No rooms available for this hotel</p>
+        <p class="text-gray-400 text-sm mt-2">Please contact the hotel administrator</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = selectedHotel.roomTypes.map(roomType => {
+    const roomDetail = selectedHotel.roomDetails[roomType] || {};
+    const maxAdults = roomDetail.maxAdults || 4;
+    const maxOccupants = roomDetail.maxOccupants || 5;
+    const childAgeLimit = roomDetail.childAgeLimit || 6;
+    const amenities = roomDetail.amenities || [];
+    const roomPhotos = roomDetail.photos || ['https://via.placeholder.com/400x250?text=Room+Image'];
+    
+    // Calculate rates for different occupancies
+    const singleEpRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, 'ep', 1, 0, 0);
+    const singleCpRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, 'cp', 1, 0, 0);
+    const doubleEpRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, 'ep', 2, 0, 0);
+    const doubleCpRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, 'cp', 2, 0, 0);
+    
+    const extraAdultRate = getExtraAdultRate(selectedHotel, roomType, selectedCheckin, selectedCheckout);
+    const maxRooms = getMaxAvailable(selectedHotel, roomType, selectedCheckin, selectedCheckout);
+    
+    // Check availability based on new 3-category logic
+    const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+    const totalOccupants = totalAdultEquivalents + selectedChildrenBelow6;
+    const isAvailable = maxRooms > 0 && totalAdultEquivalents <= maxAdults && totalOccupants <= maxOccupants;
+    const availableClass = isAvailable ? '' : 'room-unavailable';
+    const applicableOffers = getApplicableOffers(selectedHotel, roomType);
+    
+    return `
+<div class="room-card-container" data-room-type="${roomType}">
+    ${applicableOffers.length > 0 ? `
+        <div class="offer-badge">
+            <i class="fas fa-tag mr-1"></i> Special Offer
+        </div>
+    ` : ''}
+    
+    <div class="room-card-grid">
+        <!-- Photo Carousel -->
+        <div class="room-photo-carousel">
+            <div class="carousel-inner">
+                ${roomPhotos.map((photo, index) => `
+                    <div class="carousel-item">
+                        <img src="${photo}" alt="Room photo ${index + 1}" 
+                             onerror="this.src='https://via.placeholder.com/400x250?text=Room+Image'">
+                    </div>
+                `).join('')}
+            </div>
+            ${roomPhotos.length > 1 ? `
+                <div class="carousel-indicators">
+                    ${roomPhotos.map((_, index) => `
+                        <button class="carousel-indicator ${index === 0 ? 'active' : ''}" 
+                                onclick="goToRoomCarouselSlide(this, ${index})"></button>
+                    `).join('')}
+                </div>
+            ` : ''}
+        </div>
+        
+        <!-- Room Info -->
+        <div class="room-info-section">
+            <div class="room-header">
+                <div class="room-title">
+                    <span>${roomType} Room</span>
+                    ${amenities.length > 0 ? `
+                        <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" 
+                                onclick="showAmenities(['${amenities.join("', '")}'])">
+                            <i class="fas fa-list mr-1"></i>View All Amenities
+                        </button>
+                    ` : ''}
+                </div>
+                
+                <div class="room-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Max ${maxAdults} Adults</span>
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-users"></i>
+                        <span>Max ${maxOccupants} Total</span>
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-child"></i>
+                        <span>Child age: ${childAgeLimit}+</span>
+                    </span>
+                    ${extraAdultRate > 0 ? `
+                        <span class="meta-item">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Extra Person: ₹${extraAdultRate}</span>
+                        </span>
+                    ` : ''}
+                </div>
+                
+                ${amenities.length > 0 ? `
+                    <div class="amenities-preview">
+                        ${amenities.slice(0, 3).map(amenity => `
+                            <span class="amenity-tag">${amenity}</span>
+                        `).join('')}
+                        ${amenities.length > 3 ? `
+                            <span class="amenity-tag">+${amenities.length - 3} more</span>
+                        ` : ''}
+                    </div>
+                ` : ''}
+            </div>
+            
+            <!-- Occupancy Section -->
+            <div class="occupancy-section">
+                <h4><i class="fas fa-users mr-2"></i>Select Occupancy</h4>
+                
+                <div class="occupancy-grid">
+                    <!-- Adults -->
+                    <div class="occupancy-category">
+                        <div class="category-label">Adults</div>
+                        <div class="occupancy-controls" data-room-type="${roomType}" data-category="adults">
+                            <button class="occupancy-btn minus" onclick="decrementOccupancy('${roomType}', 'adults')">-</button>
+                            <span class="occupancy-value">${selectedAdults}</span>
+                            <button class="occupancy-btn plus" onclick="incrementOccupancy('${roomType}', 'adults')">+</button>
+                        </div>
+                        <div class="occupancy-limit">Max: ${maxAdults}</div>
+                    </div>
+                    
+                    <!-- Children (6+) -->
+                    <div class="occupancy-category">
+                        <div class="category-label">Children (6+)</div>
+                        <div class="occupancy-controls" data-room-type="${roomType}" data-category="childrenAbove6">
+                            <button class="occupancy-btn minus" onclick="decrementOccupancy('${roomType}', 'childrenAbove6')">-</button>
+                            <span class="occupancy-value">${selectedChildrenAbove6}</span>
+                            <button class="occupancy-btn plus" onclick="incrementOccupancy('${roomType}', 'childrenAbove6')">+</button>
+                        </div>
+                        <div class="occupancy-limit">Max: ${maxAdults - selectedAdults}</div>
+                    </div>
+                    
+                    <!-- Children (<6) -->
+                    <!-- Children (6+) -->
+<div class="occupancy-category">
+                        <div class="category-label">Children (<6)</div>
+                        <div class="occupancy-controls" data-room-type="${roomType}" data-category="childrenBelow6">
+                            <button class="occupancy-btn minus" onclick="decrementOccupancy('${roomType}', 'childrenBelow6')">-</button>
+                            <span class="occupancy-value">${selectedChildrenBelow6}</span>
+                            <button class="occupancy-btn plus" onclick="incrementOccupancy('${roomType}', 'childrenBelow6')">+</button>
+                        </div>
+                        <div class="occupancy-limit">Max: ${maxOccupants - (selectedAdults + selectedChildrenAbove6)}</div>
+                    </div>
+</div>
+            </div>
+            
+            <!-- Pricing & Actions -->
+            <div class="room-pricing">
+                <div class="meal-plan-selector">
+                    <span class="text-sm font-medium text-gray-700">Meal Plan:</span>
+                    <div>
+                        <button class="meal-plan-btn ${selectedMealPlan === 'ep' ? 'active' : ''}" 
+                                onclick="changeMealPlan('${roomType}', 'ep')">
+                            Room Only (EP)
+                        </button>
+                        <button class="meal-plan-btn ${selectedMealPlan === 'cp' ? 'active' : ''}" 
+                                onclick="changeMealPlan('${roomType}', 'cp')">
+                            Breakfast Included (CP)
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="price-section">
+    <div class="price-display">
+        <span class="current-price" id="room-rate-${roomType.replace(/\s+/g, '-')}">
+            ₹${singleEpRate}
+        </span>
+        <span class="price-period">/ night</span>
+    </div>
+    <div class="single-price-note">
+        <i class="fas fa-info-circle mr-1"></i>Single adult rate shown
+    </div>
+    <div class="extra-charges" style="display: none;"></div>
+</div>
+            </div>
+            
+            <!-- Room Selection -->
+            <div class="room-actions">
+                <div class="rooms-selector">
+                    <label for="room-count-${roomType.replace(/\s+/g, '-')}">Number of Rooms:</label>
+                    <select id="room-count-${roomType.replace(/\s+/g, '-')}" 
+                            class="border border-gray-300 rounded-lg p-2" 
+                            ${!isAvailable ? 'disabled' : ''}>
+                        ${Array.from({length: maxRooms}, (_, i) => 
+                            `<option value="${i + 1}">${i + 1}</option>`
+                        ).join('')}
+                        ${maxRooms === 0 ? '<option value="0">0</option>' : ''}
+                    </select>
+                </div>
+                
+                <button onclick="${isAvailable ? `selectRoomWithEnhancedSummary('${roomType}')` : ''}" 
+                        class="select-room-btn"
+                        ${!isAvailable ? 'disabled' : ''}>
+                    <i class="fas fa-check-circle"></i>
+                    ${isAvailable ? 'Select Room' : 'Not Available'}
+                </button>
+            </div>
+            
+            ${applicableOffers.length > 0 ? `
+                <div class="mt-4 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg">
+                    <h5 class="font-semibold text-amber-800 text-sm mb-2">
+                        <i class="fas fa-gift mr-1"></i> Special Offers:
+                    </h5>
+                    ${applicableOffers.map(offer => `
+                        <div class="text-sm text-amber-700 mb-1">
+                            <strong>${offer.name}</strong> - ${offer.description || ''}
+                            (${offer.type === 'percentage' ? `${offer.value}% off` : ''}
+                             ${offer.type === 'fixed' ? `₹${offer.value} off` : ''}
+                             ${offer.type === 'free_night' ? `${offer.value} free night(s)` : ''})
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+        </div>
+    </div>
+</div>
+`;
+  }).join('');
+  
+  // Initialize occupancy for each room type
+  selectedHotel.roomTypes.forEach(roomType => {
+    updateRoomOccupancy(roomType);
+  });
+}
+function changeMealPlan(roomType, mealPlan) {
+    selectedMealPlan = mealPlan;
+    
+    // Update active state
+    document.querySelectorAll(`[onclick*="${roomType}"]`).forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick').includes(`'${mealPlan}'`)) {
+            btn.classList.add('active');
+        }
+    });
+    
+    updateRoomRateDisplay(roomType);
+}
+// NEW: +/- Button Functions
+function incrementOccupancy(roomType, category) {
+    const roomDetail = selectedHotel.roomDetails[roomType] || {};
+    const maxAdults = roomDetail.maxAdults || 4;
+    const maxOccupants = roomDetail.maxOccupants || 5;
+    
+    switch(category) {
+        case 'adults':
+            const newAdults = selectedAdults + 1;
+            const totalAdultEquivalents = newAdults + selectedChildrenAbove6;
+            
+            if (newAdults > maxAdults) {
+                showUpgradeModal(roomType, 'adults', maxAdults);
+                return;
+            }
+            
+            // Check if total adult equivalents exceed max adults
+            if (totalAdultEquivalents > maxAdults) {
+                const maxAllowedAdults = maxAdults - selectedChildrenAbove6;
+                showUpgradeModal(roomType, 'adults', maxAllowedAdults);
+                return;
+            }
+            
+            selectedAdults = newAdults;
+            break;
+            
+        case 'childrenAbove6':
+            const newChildrenAbove6 = selectedChildrenAbove6 + 1;
+            const totalAdultEquivalents2 = selectedAdults + newChildrenAbove6;
+            
+            if (totalAdultEquivalents2 > maxAdults) {
+                showUpgradeModal(roomType, 'childrenAbove6', maxAdults - selectedAdults);
+                return;
+            }
+            selectedChildrenAbove6 = newChildrenAbove6;
+            break;
+            
+        case 'childrenBelow6':
+            const newChildrenBelow6 = selectedChildrenBelow6 + 1;
+            const totalOccupants = selectedAdults + selectedChildrenAbove6 + newChildrenBelow6;
+            
+            if (totalOccupants > maxOccupants) {
+                showUpgradeModal(roomType, 'childrenBelow6', maxOccupants - (selectedAdults + selectedChildrenAbove6));
+                return;
+            }
+            selectedChildrenBelow6 = newChildrenBelow6;
+            break;
+    }
+    
+    updateOccupancyButtons(roomType);
+    updateRoomRateDisplay(roomType);
+}
+
+function decrementOccupancy(roomType, category) {
+    switch(category) {
+        case 'adults':
+            if (selectedAdults > 1) selectedAdults--;
+            break;
+        case 'childrenAbove6':
+            if (selectedChildrenAbove6 > 0) selectedChildrenAbove6--;
+            break;
+        case 'childrenBelow6':
+            if (selectedChildrenBelow6 > 0) selectedChildrenBelow6--;
+            break;
+    }
+    
+    updateOccupancyButtons(roomType);
+    updateRoomRateDisplay(roomType);
+}
+function decrementOccupancy(roomType, category) {
+    switch(category) {
+        case 'adults':
+            if (selectedAdults > 1) selectedAdults--;
+            break;
+        case 'childrenAbove6':
+            if (selectedChildrenAbove6 > 0) selectedChildrenAbove6--;
+            break;
+        case 'childrenBelow6':
+            if (selectedChildrenBelow6 > 0) selectedChildrenBelow6--;
+            break;
+    }
+    
+    updateOccupancyButtons(roomType);
+    updateRoomRateDisplay(roomType);
+}
+
+function updateOccupancyButtons(roomType) {
+    const roomDetail = selectedHotel.roomDetails[roomType] || {};
+    const maxAdults = roomDetail.maxAdults || 4;
+    const maxOccupants = roomDetail.maxOccupants || 5;
+    
+    // Update max labels
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="adults"] .occupancy-limit`).forEach(label => {
+        const remainingForAdults = maxAdults - selectedChildrenAbove6;
+        label.textContent = `Max: ${remainingForAdults} (${remainingForAdults - selectedAdults} more)`;
+    });
+    
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="childrenAbove6"] .occupancy-limit`).forEach(label => {
+        const remainingForChildrenAbove6 = maxAdults - selectedAdults;
+        label.textContent = `Max: ${remainingForChildrenAbove6} (${remainingForChildrenAbove6 - selectedChildrenAbove6} more)`;
+    });
+    
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="childrenBelow6"] .occupancy-limit`).forEach(label => {
+        const remainingForChildrenBelow6 = maxOccupants - (selectedAdults + selectedChildrenAbove6);
+        label.textContent = `Max: ${remainingForChildrenBelow6} (${remainingForChildrenBelow6 - selectedChildrenBelow6} more)`;
+    });
+    
+    // Update display values
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="adults"] .occupancy-value`).forEach(span => {
+        span.textContent = selectedAdults;
+    });
+    
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="childrenAbove6"] .occupancy-value`).forEach(span => {
+        span.textContent = selectedChildrenAbove6;
+    });
+    
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="childrenBelow6"] .occupancy-value`).forEach(span => {
+        span.textContent = selectedChildrenBelow6;
+    });
+    
+    // Update minus buttons (only disable if value is at minimum)
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="adults"] .minus`).forEach(btn => {
+        btn.disabled = selectedAdults <= 1;
+    });
+    
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="childrenAbove6"] .minus`).forEach(btn => {
+        btn.disabled = selectedChildrenAbove6 <= 0;
+    });
+    
+    document.querySelectorAll(`[data-room-type="${roomType}"][data-category="childrenBelow6"] .minus`).forEach(btn => {
+        btn.disabled = selectedChildrenBelow6 <= 0;
+    });
+}
+
+// NEW: Upgrade Modal Functions
+let currentRoomTypeForUpgrade = '';
+let upgradeReason = '';
+
+function showUpgradeModal(roomType, category, maxAllowed) {
+    currentRoomTypeForUpgrade = roomType;
+    upgradeReason = category;
+    
+    const roomDetail = selectedHotel.roomDetails[roomType] || {};
+    const modal = document.getElementById('upgradeModal');
+    const title = document.getElementById('upgradeModalTitle');
+    const message = document.getElementById('upgradeModalMessage');
+    
+    const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+    const totalOccupants = totalAdultEquivalents + selectedChildrenBelow6;
+    
+    let reasonText = '';
+    let currentSelection = '';
+    
+    switch(category) {
+        case 'adults':
+            reasonText = `This room can accommodate maximum ${maxAllowed} adults.`;
+            currentSelection = `You selected: ${selectedAdults + 1} adults`;
+            break;
+        case 'childrenAbove6':
+            reasonText = `With ${selectedAdults} adults, you can add maximum ${maxAllowed} children (6+).`;
+            currentSelection = `You selected: ${selectedChildrenAbove6 + 1} children (6+)`;
+            break;
+        case 'childrenBelow6':
+            reasonText = `With current occupancy (${selectedAdults} adults + ${selectedChildrenAbove6} children 6+), you can add maximum ${maxAllowed} children (<6).`;
+            currentSelection = `You selected: ${selectedChildrenBelow6 + 1} children (<6)`;
+            break;
+    }
+    
+    title.textContent = 'Room Upgrade Required';
+    message.innerHTML = `
+        <p><strong>${reasonText}</strong></p>
+        <p>${currentSelection}</p>
+        <p class="mt-2">Please consider upgrading to a room with higher capacity:</p>
+    `;
+    
+    // Find suitable upgrade rooms
+    const upgradeRooms = findUpgradeRooms(roomType, totalAdultEquivalents, totalOccupants);
+    const suggestionsContainer = document.getElementById('upgradeRoomSuggestions');
+    
+    if (upgradeRooms.length > 0) {
+        suggestionsContainer.innerHTML = upgradeRooms.map(room => `
+            <div class="room-upgrade-suggestion mt-3">
+                <h4 class="font-bold text-lg">${room.name}</h4>
+                <div class="flex justify-between items-center mb-2">
+                    <span>Capacity: ${room.maxAdults} adults, ${room.maxOccupants} total</span>
+                    <span class="font-bold text-blue-600">₹${room.singleEpRate}/night</span>
+                </div>
+                <ul class="room-upgrade-features">
+                    <li><i class="fas fa-check text-green-500"></i> Can accommodate your group of ${totalOccupants}</li>
+                    <li><i class="fas fa-check text-green-500"></i> ${room.amenities || 'Standard amenities'}</li>
+                </ul>
+                <button onclick="selectUpgradeRoom('${room.name}')" 
+                        class="w-full mt-3 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                    Select ${room.name}
+                </button>
+            </div>
+        `).join('');
+    } else {
+        suggestionsContainer.innerHTML = `
+            <div class="mt-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p>No suitable upgrade rooms available. Please adjust your occupancy.</p>
+            </div>
+        `;
+    }
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function findUpgradeRooms(currentRoomType, totalAdultEquivalents, totalOccupants) {
+    const upgradeRooms = [];
+    
+    selectedHotel.roomTypes.forEach(roomType => {
+        if (roomType === currentRoomType) return;
+        
+        const roomDetail = selectedHotel.roomDetails[roomType] || {};
+        
+        // Check if room has higher capacity
+        if (roomDetail.maxAdults >= totalAdultEquivalents && 
+            roomDetail.maxOccupants >= totalOccupants) {
+            
+            const singleEpRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, 'ep', 1, 0, 0);
+            const amenities = roomDetail.amenities ? 
+                (Array.isArray(roomDetail.amenities) ? roomDetail.amenities.join(', ') : roomDetail.amenities) : 
+                'Standard amenities';
+            
+            upgradeRooms.push({
+                name: roomType,
+                maxAdults: roomDetail.maxAdults,
+                maxOccupants: roomDetail.maxOccupants,
+                singleEpRate: singleEpRate,
+                amenities: amenities.substring(0, 100) + '...'
+            });
+        }
+    });
+    
+    return upgradeRooms.sort((a, b) => a.singleEpRate - b.singleEpRate);
+}
+function selectUpgradeRoom(roomType) {
+    closeUpgradeModal();
+    
+    // Find and scroll to the upgrade room
+    const roomCard = document.querySelector(`[data-room-type="${roomType}"]`);
+    if (roomCard) {
+        roomCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Highlight the room
+        roomCard.style.border = '3px solid #1976d2';
+        roomCard.style.boxShadow = '0 0 20px rgba(25, 118, 210, 0.5)';
+        
+        setTimeout(() => {
+            roomCard.style.border = '';
+            roomCard.style.boxShadow = '';
+        }, 3000);
+    }
+    
+    showToast(`Please select ${roomType} for your group size`, 'info');
+}
+
+function closeUpgradeModal() {
+    const modal = document.getElementById('upgradeModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function findUpgradeRooms(currentRoomType) {
+    const currentRoom = selectedHotel.roomDetails[currentRoomType] || {};
+    const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+    const totalOccupants = totalAdultEquivalents + selectedChildrenBelow6;
+    
+    const upgradeRooms = [];
+    
+    selectedHotel.roomTypes.forEach(roomType => {
+        if (roomType === currentRoomType) return;
+        
+        const roomDetail = selectedHotel.roomDetails[roomType] || {};
+        if (roomDetail.maxAdults >= totalAdultEquivalents && 
+            roomDetail.maxOccupants >= totalOccupants) {
+            
+            const singleEpRate = calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, 'ep', 1, 0, 0);
+            
+            upgradeRooms.push({
+                name: roomType,
+                maxAdults: roomDetail.maxAdults,
+                maxOccupants: roomDetail.maxOccupants,
+                singleEpRate: singleEpRate
+            });
+        }
+    });
+    
+    return upgradeRooms.sort((a, b) => a.singleEpRate - b.singleEpRate);
+}
+
+function viewUpgradeRooms() {
+    closeUpgradeModal();
+    // Scroll to or highlight upgrade rooms
+    alert('Please check other room types with higher capacity.');
+}
+// NEW: Show amenities in modal
+function showAmenities(amenities) {
+  const modal = document.getElementById('amenities-modal');
+  const amenitiesList = document.getElementById('amenities-list');
+  const modalTitle = document.getElementById('amenities-modal-title');
+  
+  // Clear previous amenities
+  amenitiesList.innerHTML = '';
+  
+  // Set modal title
+  modalTitle.textContent = 'Room Amenities';
+  
+  // Add amenities to grid
+  if (Array.isArray(amenities) && amenities.length > 0) {
+    amenities.forEach(amenity => {
+      const amenityItem = document.createElement('div');
+      amenityItem.className = 'amenity-item';
+      amenityItem.innerHTML = `
+        <div class="amenity-icon">
+          <i class="fas fa-check"></i>
+        </div>
+        <span class="amenity-name">${amenity}</span>
+      `;
+      amenitiesList.appendChild(amenityItem);
+    });
+  } else {
+    amenitiesList.innerHTML = '<p class="text-gray-500 text-center py-4">No amenities listed</p>';
+  }
+  
+  // Show modal
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// Close amenities modal
+function closeAmenitiesModal() {
+  const modal = document.getElementById('amenities-modal');
+  modal.classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+// Select Room and Show Guest Details
+// UPDATE: Select Room with 3-category guest summary
+function selectRoomWithEnhancedSummary(roomType) {
+  selectedRoom = roomType;
+  selectedNights = calculateNights(selectedCheckin, selectedCheckout);
+  
+  const mealPlanSelect = document.getElementById(`meal-plan-${roomType.replace(/\s+/g, '-')}`);
+  const roomCountSelect = document.getElementById(`room-count-${roomType.replace(/\s+/g, '-')}`);
+  const rateDisplay = document.getElementById(`room-rate-${roomType.replace(/\s+/g, '-')}`);
+  
+  selectedMealPlan = mealPlanSelect ? mealPlanSelect.value : 'ep';
+  selectedNumRooms = roomCountSelect ? parseInt(roomCountSelect.value) : 1;
+  selectedRate = parseFloat(rateDisplay.getAttribute('data-current-rate')) || 
+                   calculateRoomRate(selectedHotel, roomType, selectedCheckin, selectedCheckout, selectedMealPlan, selectedAdults, selectedChildrenAbove6, selectedChildrenBelow6);
+  
+  applicableOffers = getApplicableOffers(selectedHotel, roomType);
+  
+  // Double-check availability with new 3-category logic
+  const roomDetail = selectedHotel.roomDetails[roomType] || {};
+  const maxAdults = roomDetail.maxAdults || 4;
+  const maxOccupants = roomDetail.maxOccupants || 5;
+  const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+const totalOccupants = totalAdultEquivalents + selectedChildrenBelow6;
+
+// Check if at least 1 adult is selected
+if (selectedAdults < 1) {
+  showToast('Please select at least 1 adult', 'error');
+  return;
+}
+
+const currentAvailability = getMaxAvailable(selectedHotel, roomType, selectedCheckin, selectedCheckout);
+if (currentAvailability < selectedNumRooms || totalAdultEquivalents > maxAdults || totalOccupants > maxOccupants) {
+  showToast(`Sorry, room selection criteria not met`, 'error');
+  renderRooms();
+  return;
+}
+  
+  updateProgress(60);
+  showGuestSection();
+  updateGuestSummaryWithBreakdown();
+  loadAddons();
+}
+
+// Enhanced function for guest section with detailed breakdown
+// UPDATE: Enhanced function for guest section with detailed breakdown
+function updateGuestSummaryWithBreakdown() {
+  // Calculate base room charges using the new pricing logic
+  roomCharges = selectedRate * selectedNights * selectedNumRooms;
+  
+  // Calculate extra person charges based on new logic
+  const extraAdultRate = getExtraAdultRate(selectedHotel, selectedRoom, selectedCheckin, selectedCheckout);
+  const totalAdultEquivalents = selectedAdults + selectedChildrenAbove6;
+  
+  let extraAdultEquivalents = 0;
+  
+  // Special case: 1 adult + 1 child above 6
+  if (selectedAdults === 1 && selectedChildrenAbove6 >= 1 && totalAdultEquivalents <= 2) {
+    extraAdultEquivalents = 1; // Only the child above 6 counts as extra
+  } else if (totalAdultEquivalents > 2) {
+    extraAdultEquivalents = totalAdultEquivalents - 2;
+  }
+  
+  const extraPersonCharges = extraAdultEquivalents * extraAdultRate * selectedNights * selectedNumRooms;
+  
+  // Rest of the function remains the same...
+  addonsCharges = 0;
+  selectedAddons.forEach(index => {
+    const addon = selectedHotel.addons[index];
+    let addonPrice = addon.price;
+    
+    if (addon.type === 'per_night') {
+      addonPrice *= selectedNights;
+    } else if (addon.type === 'per_person') {
+      // Include all guests for per_person addons
+      addonPrice *= (selectedAdults + selectedChildrenAbove6 + selectedChildrenBelow6);
+    }
+    
+    addonsCharges += addonPrice;
+  });
+  
+  // Calculate offer discounts
+  offerDiscount = 0;
+  let offerDetails = [];
+  applicableOffers.forEach(offer => {
+    let discount = 0;
+    
+    if (offer.type === 'percentage') {
+      discount = (roomCharges * offer.value) / 100;
+    } else if (offer.type === 'fixed') {
+      discount = offer.value;
+    } else if (offer.type === 'free_night') {
+      const nightsToDiscount = Math.min(offer.value, selectedNights);
+      discount = (selectedRate * selectedNumRooms) * nightsToDiscount;
+    }
+    
+    offerDiscount += discount;
+    offerDetails.push({ name: offer.name, discount: discount });
+  });
+  
+  offerDiscount = Math.min(offerDiscount, roomCharges);
+  
+  // Calculate tax
+  const taxRate = selectedRate >= 7500 ? 0.18 : 0.05;
+  const taxableAmount = roomCharges + extraPersonCharges + addonsCharges - offerDiscount;
+  taxAmount = Math.round(taxableAmount * taxRate);
+  
+  // Calculate convenience fee for online payments
+  convenienceFee = 0;
+  commission = 0;
+  gstOnCommission = 0;
+  
+  if (selectedPaymentMethod && selectedPaymentMethod.startsWith('razorpay')) {
+    const feeDetails = calculateConvenienceFee(taxableAmount + taxAmount);
+    convenienceFee = feeDetails.totalConvenienceFee;
+    commission = feeDetails.commission;
+    gstOnCommission = feeDetails.gstOnCommission;
+  }
+  
+  totalAmount = taxableAmount + taxAmount + convenienceFee;
+  
+  // Update basic summary with 3 categories
+  const mealPlanText = selectedMealPlan === 'ep' ? 'Room Only (EP)' : 'Breakfast Included (CP)';
+  document.getElementById('summary-hotel').textContent = selectedHotel.name;
+  document.getElementById('summary-room').textContent = `${selectedRoom} (${selectedNumRooms} room(s))`;
+  document.getElementById('summary-dates').textContent = `${selectedCheckin} to ${selectedCheckout} (${selectedNights} nights)`;
+  document.getElementById('summary-guests').textContent = `${selectedAdults} Adults, ${selectedChildrenAbove6} Children (6+), ${selectedChildrenBelow6} Children (<6)`;
+  document.getElementById('summary-mealplan').textContent = mealPlanText;
+  document.getElementById('summary-room-charges').textContent = `₹${roomCharges}`;
+  document.getElementById('summary-total').textContent = `₹${totalAmount}`;
+  
+  // Update detailed breakdown in guest section
+  updateGuestSectionBreakdown(extraPersonCharges, extraAdultEquivalents, extraAdultRate, addonsCharges, offerDetails, taxRate);
+}
+
+function updateHotelCardPrices() {
+    // Update all hotel cards with lowest prices
+    document.querySelectorAll('.price-tag').forEach(priceTag => {
+        const hotelName = priceTag.closest('.booking-card').querySelector('h3').textContent;
+        const hotel = hotels.find(h => h.name === hotelName);
+        
+        if (hotel) {
+            const lowestPrice = getStartingPrice(hotel);
+            priceTag.innerHTML = `
+                From ₹${lowestPrice}/night
+                <div class="text-xs font-normal mt-1">Single adult rate</div>
+            `;
+        }
+    });
+}
+// UPDATE: Guest section breakdown with 3 categories
+function updateGuestSectionBreakdown(extraPersonCharges, extraAdultEquivalents, extraAdultRate, addonsCharges, offerDetails, taxRate) {
+  const breakdownContainer = document.getElementById('guest-detailed-breakdown');
+  breakdownContainer.innerHTML = '';
+  
+  let breakdownHTML = '';
+  
+  // Room charges breakdown
+  breakdownHTML += `
+    <div class="flex justify-between">
+      <span class="text-gray-600">Room Charges (${selectedNights} nights × ${selectedNumRooms} room):</span>
+      <span class="font-medium">₹${roomCharges}</span>
+    </div>
+  `;
+  
+  // Extra person charges with new calculation
+  if (extraAdultEquivalents > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Extra Adult Equivalents (${extraAdultEquivalents} × ₹${extraAdultRate}/night):</span>
+        <span class="font-medium">₹${extraPersonCharges}</span>
+      </div>
+      <div class="text-xs text-gray-500 ml-4 mb-2">
+        Based on (${selectedAdults} adults + ${selectedChildrenAbove6} children 6+ - 2) = ${extraAdultEquivalents} extra
+      </div>
+    `;
+  }
+  
+  // Addons charges
+  if (addonsCharges > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Additional Services:</span>
+        <span class="font-medium">₹${addonsCharges}</span>
+      </div>
+    `;
+  }
+  
+  // Offer discounts
+  if (offerDetails.length > 0) {
+    offerDetails.forEach(offer => {
+      breakdownHTML += `
+        <div class="flex justify-between text-green-600">
+          <span>${offer.name}:</span>
+          <span class="font-medium">-₹${offer.discount}</span>
+        </div>
+      `;
+    });
+  }
+  
+  // Tax
+  breakdownHTML += `
+    <div class="flex justify-between">
+      <span class="text-gray-600">Tax (${taxRate * 100}%):</span>
+      <span class="font-medium">₹${taxAmount}</span>
+    </div>
+  `;
+  
+  // Convenience fee (only for online payments)
+  if (convenienceFee > 0) {
+    breakdownHTML += `
+      <div class="convenience-fee-breakdown">
+        <div class="fee-item main">
+          <span>Payment Gateway Charges:</span>
+          <span>₹${convenienceFee}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>Razorpay Commission (2%):</span>
+          <span>₹${commission}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>GST on Commission (18%):</span>
+          <span>₹${gstOnCommission}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  breakdownContainer.innerHTML = breakdownHTML;
+}
+
+// Update guest section breakdown
+function updateGuestSectionBreakdown(extraPersonCharges, extraPersons, extraAdultRate, addonsCharges, offerDetails, taxRate) {
+  const breakdownContainer = document.getElementById('guest-detailed-breakdown');
+  breakdownContainer.innerHTML = '';
+  
+  let breakdownHTML = '';
+  
+  // Room charges breakdown
+  breakdownHTML += `
+    <div class="flex justify-between">
+      <span class="text-gray-600">Room Charges (${selectedNights} nights × ${selectedNumRooms} room):</span>
+      <span class="font-medium">₹${roomCharges}</span>
+    </div>
+  `;
+  
+  // Extra person charges
+  if (extraPersons > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Extra Persons (${extraPersons} × ₹${extraAdultRate}/night):</span>
+        <span class="font-medium">₹${extraPersonCharges}</span>
+      </div>
+    `;
+  }
+  
+  // Addons charges
+  if (addonsCharges > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Additional Services:</span>
+        <span class="font-medium">₹${addonsCharges}</span>
+      </div>
+    `;
+  }
+  
+  // Offer discounts
+  if (offerDetails.length > 0) {
+    offerDetails.forEach(offer => {
+      breakdownHTML += `
+        <div class="flex justify-between text-green-600">
+          <span>${offer.name}:</span>
+          <span class="font-medium">-₹${offer.discount}</span>
+        </div>
+      `;
+    });
+  }
+  
+  // Tax
+  breakdownHTML += `
+    <div class="flex justify-between">
+      <span class="text-gray-600">Tax (${taxRate * 100}%):</span>
+      <span class="font-medium">₹${taxAmount}</span>
+    </div>
+  `;
+  
+  // Convenience fee (only for online payments)
+  if (convenienceFee > 0) {
+    breakdownHTML += `
+      <div class="convenience-fee-breakdown">
+        <div class="fee-item main">
+          <span>Payment Gateway Charges:</span>
+          <span>₹${convenienceFee}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>Razorpay Commission (2%):</span>
+          <span>₹${commission}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>GST on Commission (18%):</span>
+          <span>₹${gstOnCommission}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  breakdownContainer.innerHTML = breakdownHTML;
+}
+
+// Load available addons
+function loadAddons() {
+  const container = document.getElementById('addons-container');
+  selectedAddons = [];
+  
+  if (!selectedHotel.addons || selectedHotel.addons.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-4">No additional services available</p>';
+    return;
+  }
+
+  container.innerHTML = selectedHotel.addons.map((addon, index) => `
+    <div class="addon-item" onclick="toggleAddon(${index})">
+      <div class="flex justify-between items-center">
+        <div>
+          <h4 class="font-semibold">${addon.name}</h4>
+          <p class="text-sm text-gray-600">${addon.description || ''}</p>
+        </div>
+        <div class="text-right">
+          <div class="font-semibold">₹${addon.price}</div>
+          <div class="text-xs text-gray-500">${addon.type.replace('_', ' ')}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Toggle addon selection
+function toggleAddon(index) {
+  const addon = selectedHotel.addons[index];
+  const addonItem = document.querySelectorAll('.addon-item')[index];
+  
+  if (selectedAddons.includes(index)) {
+    selectedAddons = selectedAddons.filter(i => i !== index);
+    addonItem.classList.remove('selected');
+  } else {
+    selectedAddons.push(index);
+    addonItem.classList.add('selected');
+  }
+  
+  updateGuestSummaryWithBreakdown();
+}
+
+// Update payment summary with detailed breakdown
+// UPDATE: Payment summary with 3-category breakdown
+function updatePaymentSummaryWithBreakdown() {
+  // Recalculate all charges with new 3-category logic
+  roomCharges = selectedRate * selectedNights * selectedNumRooms;
+  
+  const extraAdultRate = getExtraAdultRate(selectedHotel, selectedRoom, selectedCheckin, selectedCheckout);
+  const extraAdultEquivalents = Math.max(0, (selectedAdults + selectedChildrenAbove6) - 2);
+  const extraPersonCharges = extraAdultEquivalents * extraAdultRate * selectedNights * selectedNumRooms;
+  
+  addonsCharges = 0;
+  selectedAddons.forEach(index => {
+    const addon = selectedHotel.addons[index];
+    let addonPrice = addon.price;
+    
+    if (addon.type === 'per_night') {
+      addonPrice *= selectedNights;
+    } else if (addon.type === 'per_person') {
+      addonPrice *= (selectedAdults + selectedChildrenAbove6 + selectedChildrenBelow6);
+    }
+    
+    addonsCharges += addonPrice;
+  });
+  
+  offerDiscount = 0;
+  applicableOffers.forEach(offer => {
+    let discount = 0;
+    
+    if (offer.type === 'percentage') {
+      discount = (roomCharges * offer.value) / 100;
+    } else if (offer.type === 'fixed') {
+      discount = offer.value;
+    } else if (offer.type === 'free_night') {
+      const nightsToDiscount = Math.min(offer.value, selectedNights);
+      discount = (selectedRate * selectedNumRooms) * nightsToDiscount;
+    }
+    
+    offerDiscount += discount;
+  });
+  
+  offerDiscount = Math.min(offerDiscount, roomCharges);
+  
+  const taxRate = selectedRate >= 7500 ? 0.18 : 0.05;
+  const taxableAmount = roomCharges + extraPersonCharges + addonsCharges - offerDiscount;
+  taxAmount = Math.round(taxableAmount * taxRate);
+  
+  convenienceFee = 0;
+  commission = 0;
+  gstOnCommission = 0;
+  
+  if (selectedPaymentMethod && selectedPaymentMethod.startsWith('razorpay')) {
+    const feeDetails = calculateConvenienceFee(taxableAmount + taxAmount);
+    convenienceFee = feeDetails.totalConvenienceFee;
+    commission = feeDetails.commission;
+    gstOnCommission = feeDetails.gstOnCommission;
+  }
+  
+  totalAmount = taxableAmount + taxAmount + convenienceFee;
+  
+  // Update basic payment summary
+  document.getElementById('payment-summary-hotel').textContent = selectedHotel.name;
+  document.getElementById('payment-summary-room').textContent = `${selectedRoom} (${selectedNumRooms} room(s))`;
+  document.getElementById('payment-summary-dates').textContent = `${selectedCheckin} to ${selectedCheckout} (${selectedNights} nights)`;
+  document.getElementById('payment-summary-guests').textContent = `${selectedAdults} Adults, ${selectedChildrenAbove6} Children (6+), ${selectedChildrenBelow6} Children (<6)`;
+  document.getElementById('payment-summary-total').textContent = `₹${totalAmount}`;
+  
+  // Create detailed breakdown
+  createDetailedPaymentBreakdown(roomCharges, extraPersonCharges, extraAdultEquivalents, extraAdultRate, addonsCharges, offerDiscount, taxAmount, taxRate);
+}
+
+// UPDATE: Create detailed payment breakdown with 3 categories
+function createDetailedPaymentBreakdown(roomCharges, extraPersonCharges, extraAdultEquivalents, extraAdultRate, addonsCharges, offerDiscount, taxAmount, taxRate) {
+  const breakdownContainer = document.getElementById('detailed-payment-breakdown');
+  breakdownContainer.innerHTML = '';
+  
+  let breakdownHTML = `
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-600">Room Charges (${selectedNights} nights × ${selectedNumRooms} room):</span>
+        <span class="font-medium">₹${roomCharges}</span>
+      </div>
+  `;
+  
+  if (extraAdultEquivalents > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Extra Adult Equivalents (${extraAdultEquivalents} × ₹${extraAdultRate}/night):</span>
+        <span class="font-medium">₹${extraPersonCharges}</span>
+      </div>
+      <div class="flex justify-between ml-4 text-xs text-gray-500">
+        <span>Calculation: (${selectedAdults} adults + ${selectedChildrenAbove6} children 6+ - 2) = ${extraAdultEquivalents}</span>
+      </div>
+    `;
+  }
+  
+  if (addonsCharges > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Additional Services:</span>
+        <span class="font-medium">₹${addonsCharges}</span>
+      </div>
+    `;
+    
+    selectedAddons.forEach(index => {
+      const addon = selectedHotel.addons[index];
+      breakdownHTML += `
+        <div class="flex justify-between ml-4">
+          <span class="text-gray-500 text-xs">- ${addon.name}:</span>
+          <span class="text-xs">₹${addon.price}</span>
+        </div>
+      `;
+    });
+  }
+  
+  if (offerDiscount > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between text-green-600">
+        <span>Special Offers Discount:</span>
+        <span class="font-medium">-₹${offerDiscount}</span>
+      </div>
+    `;
+  }
+  
+  breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Tax (${taxRate * 100}%):</span>
+        <span class="font-medium">₹${taxAmount}</span>
+      </div>
+  `;
+  
+  if (convenienceFee > 0) {
+    breakdownHTML += `
+      <div class="convenience-fee-breakdown">
+        <div class="fee-item main">
+          <span>Payment Gateway Charges:</span>
+          <span>₹${convenienceFee}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>Razorpay Commission (2%):</span>
+          <span>₹${commission}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>GST on Commission (18%):</span>
+          <span>₹${gstOnCommission}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  breakdownHTML += `</div>`;
+  breakdownContainer.innerHTML = breakdownHTML;
+}
+
+// Create detailed payment breakdown
+function createDetailedPaymentBreakdown(roomCharges, extraPersonCharges, extraPersons, extraAdultRate, addonsCharges, offerDiscount, taxAmount, taxRate) {
+  const breakdownContainer = document.getElementById('detailed-payment-breakdown');
+  breakdownContainer.innerHTML = '';
+  
+  let breakdownHTML = `
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-600">Room Charges (${selectedNights} nights × ${selectedNumRooms} room):</span>
+        <span class="font-medium">₹${roomCharges}</span>
+      </div>
+  `;
+  
+  if (extraPersons > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Extra Persons (${extraPersons} × ₹${extraAdultRate}/night):</span>
+        <span class="font-medium">₹${extraPersonCharges}</span>
+      </div>
+    `;
+  }
+  
+  if (addonsCharges > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Additional Services:</span>
+        <span class="font-medium">₹${addonsCharges}</span>
+      </div>
+    `;
+    
+    selectedAddons.forEach(index => {
+      const addon = selectedHotel.addons[index];
+      breakdownHTML += `
+        <div class="flex justify-between ml-4">
+          <span class="text-gray-500 text-xs">- ${addon.name}:</span>
+          <span class="text-xs">₹${addon.price}</span>
+        </div>
+      `;
+    });
+  }
+  
+  if (offerDiscount > 0) {
+    breakdownHTML += `
+      <div class="flex justify-between text-green-600">
+        <span>Special Offers Discount:</span>
+        <span class="font-medium">-₹${offerDiscount}</span>
+      </div>
+    `;
+  }
+  
+  breakdownHTML += `
+      <div class="flex justify-between">
+        <span class="text-gray-600">Tax (${taxRate * 100}%):</span>
+        <span class="font-medium">₹${taxAmount}</span>
+      </div>
+  `;
+  
+  if (convenienceFee > 0) {
+    breakdownHTML += `
+      <div class="convenience-fee-breakdown">
+        <div class="fee-item main">
+          <span>Payment Gateway Charges:</span>
+          <span>₹${convenienceFee}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>Razorpay Commission (2%):</span>
+          <span>₹${commission}</span>
+        </div>
+        <div class="fee-item sub">
+          <span>GST on Commission (18%):</span>
+          <span>₹${gstOnCommission}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  breakdownHTML += `</div>`;
+  breakdownContainer.innerHTML = breakdownHTML;
+}
+
+// Update the showPaymentSection function to include detailed breakdown
+function showPaymentSectionWithBreakdown() {
+  const name = document.getElementById('guest-name').value.trim();
+  const email = document.getElementById('guest-email').value.trim();
+  const phone = document.getElementById('guest-phone').value.trim();
+
+  if (!name || !email || !phone) {
+    showToast('Please fill in all guest details', 'error');
+    return;
+  }
+
+  if (!validateEmail(email)) {
+    showToast('Please enter a valid email address', 'error');
+    return;
+  }
+
+  if (!validatePhone(phone)) {
+    showToast('Please enter a valid phone number', 'error');
+    return;
+  }
+
+  updateProgress(80);
+  showPaymentSectionView();
+  updatePaymentSummaryWithBreakdown();
+  loadPaymentOptions();
+}
+
+// Select Payment Method with convenience fee handling
+function selectPayment(method) {
+  selectedPaymentMethod = method;
+  
+  // Update UI
+  document.querySelectorAll('.payment-option').forEach(option => {
+    option.classList.remove('selected');
+    const radio = option.querySelector('input[type="radio"]');
+    if (radio) radio.checked = false;
+  });
+  
+  const currentOption = event?.currentTarget;
+  if (currentOption) {
+    currentOption.classList.add('selected');
+    const radio = currentOption.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  }
+  
+  // Show/hide convenience fee notice
+  const feeNotice = document.getElementById('convenience-fee-notice');
+  if (method.startsWith('razorpay')) {
+    feeNotice.style.display = 'block';
+  } else {
+    feeNotice.style.display = 'none';
+  }
+  
+  // Recalculate totals with convenience fee
+  updatePaymentSummaryWithBreakdown();
+  
+  // Show/hide UPI QR code
+  const qrContainer = document.getElementById('upi-qr-container');
+  if (method === 'upi') {
+    qrContainer.style.display = 'block';
+    if (selectedHotel.qr_code) {
+      document.getElementById('hotel-qr-code').src = selectedHotel.qr_code;
+    }
+  } else {
+    qrContainer.style.display = 'none';
+  }
+}
+
+// Load payment options based on hotel configuration
+function loadPaymentOptions() {
+  const razorpayOptions = document.getElementById('razorpay-options');
+  const configStatus = document.getElementById('payment-config-status');
+  const configTitle = document.getElementById('config-status-title');
+  const configDesc = document.getElementById('config-status-desc');
+  const currentHotelName = document.getElementById('current-hotel-name');
+  
+  if (currentHotelName) {
+    currentHotelName.textContent = selectedHotel.name;
+  }
+  
+  const hasValidRazorpay = selectedHotel.razorpay_key_id && 
+                          selectedHotel.razorpay_key_id.startsWith('rzp_');
+  
+  const isRazorpayActive = selectedHotel.active_payment_gateway === 'razorpay';
+  
+  if (isRazorpayActive && hasValidRazorpay) {
+    razorpayOptions.style.display = 'block';
+    configStatus.className = 'mb-6 p-4 bg-green-50 border border-green-200 rounded-lg';
+    configTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Online Payments Available';
+    configDesc.innerHTML = `All payment methods are available for <strong>${selectedHotel.name}</strong>`;
+    
+    // Auto-select the first Razorpay option instead of UPI
+    setTimeout(() => {
+      const firstRazorpayOption = document.querySelector('.payment-option input[value^="razorpay"]');
+      if (firstRazorpayOption && !document.querySelector('.payment-option input:checked')) {
+        firstRazorpayOption.checked = true;
+        firstRazorpayOption.closest('.payment-option').classList.add('selected');
+        selectedPaymentMethod = firstRazorpayOption.value;
+      }
+    }, 100);
+    
+  } else {
+    razorpayOptions.style.display = 'none';
+    
+    if (isRazorpayActive && !hasValidRazorpay) {
+      configStatus.className = 'mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg';
+      configTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Payment Gateway Issue';
+      configDesc.innerHTML = `Online payments temporarily unavailable. UPI QR payments coming soon.`;
+    } else {
+      configStatus.className = 'mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg';
+      configTitle.innerHTML = '<i class="fas fa-clock mr-2"></i>Payment Options Coming Soon';
+      configDesc.innerHTML = `UPI QR payments coming soon for <strong>${selectedHotel.name}</strong>`;
+    }
+  }
+  
+  const upiAmountElement = document.getElementById('upi-amount');
+  if (upiAmountElement) {
+    upiAmountElement.textContent = totalAmount;
+  }
+}
+
+// Process payment based on selection
+async function processPayment() {
+  if (!selectedPaymentMethod) {
+    showToast('Please select a payment method', 'error');
+    return;
+  }
+
+  // Check if UPI is selected (should be disabled but just in case)
+  if (selectedPaymentMethod === 'upi') {
+    showToast('UPI QR payments are coming soon. Please select another payment method.', 'error');
+    return;
+  }
+
+  try {
+    showToast('Processing payment...', 'info');
+    
+    if (selectedPaymentMethod.startsWith('razorpay')) {
+      await processRazorpayPayment();
+    }
+  } catch (error) {
+    console.error('Payment error:', error);
+    showToast('Payment failed: ' + error.message, 'error');
+  }
+}
+
+// RAZORPAY PAYMENT WITH EDGE FUNCTIONS
+async function processRazorpayPayment() {
+    try {
+        showToast('Creating secure payment...', 'info');
+        
+        // 1. Create booking record
+        const bookingData = await createBookingRecord();
+        
+        // 2. Create Razorpay order via Edge Function
+        const orderResponse = await createRazorpayOrder(bookingData);
+        
+        if (!orderResponse.id) {
+            throw new Error('Payment order creation failed');
+        }
+
+        console.log('✅ Razorpay order created:', orderResponse.id);
+
+        // 3. Initialize Razorpay with the order ID
+        const options = {
+            key: selectedHotel.razorpay_key_id,
+            amount: Math.round(totalAmount * 100),
+            currency: 'INR',
+            order_id: orderResponse.id,
+            name: selectedHotel.name,
+            description: `Booking ${bookingData.booking_number}`,
+            image: selectedHotel.logo || 'https://via.placeholder.com/100x100?text=Hotel',
+            handler: async function(response) {
+                console.log('💰 Payment successful, marking as completed...', response);
+                
+                try {
+                    showToast('Payment completed! Confirming booking...', 'success');
+                    
+                    // Update booking with order ID
+                    await updateBookingWithOrderId(bookingData.booking_number, response.razorpay_order_id);
+                    
+                    // Update booking status to confirmed
+                    await updateBookingStatus(bookingData.booking_number, 'confirmed');
+                    
+                    // Update inventory
+                    await updateHotelInventory();
+                    
+                    // Show confirmation and send voucher email
+                    currentBooking = bookingData;
+                    updateProgress(100);
+                    showConfirmationSection();
+                    generateVoucher();
+                    
+                    // Automatically send voucher email
+                    await sendEmailVoucher();
+                    
+                    console.log('🎉 Booking confirmed successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Booking confirmation error:', error);
+                    showToast('Booking confirmed but email failed: ' + error.message, 'warning');
+                }
+            },
+            prefill: {
+                name: document.getElementById('guest-name').value,
+                email: document.getElementById('guest-email').value,
+                contact: document.getElementById('guest-phone').value
+            },
+            notes: {
+                booking_id: bookingData.booking_number,
+                hotel: selectedHotel.name
+            },
+            theme: {
+                color: '#F37254'
+            }
+        };
+        
+        const rzp = new Razorpay(options);
+        
+        // Add modal close handler - treat as success when window closes
+        rzp.on('modal.closed', async function(response) {
+            console.log('🔒 Razorpay modal closed:', response);
+            
+            // Whether payment completed or just closed, proceed with booking
+            console.log('Modal closed, proceeding with booking...');
+            
+            try {
+                showToast('Processing booking...', 'info');
+                
+                // Update booking status to confirmed
+                await updateBookingStatus(bookingData.booking_number, 'confirmed');
+                
+                // Update inventory
+                await updateHotelInventory();
+                
+                // Show confirmation and send voucher email
+                currentBooking = bookingData;
+                updateProgress(100);
+                showConfirmationSection();
+                generateVoucher();
+                
+                // Automatically send voucher email
+                await sendEmailVoucher();
+                
+                showToast('Booking confirmed!', 'success');
+                
+            } catch (error) {
+                console.error('❌ Modal close booking error:', error);
+                showToast('Booking processing error: ' + error.message, 'error');
+            }
+        });
+        
+        rzp.open();
+
+    } catch (error) {
+        console.error('💥 Razorpay payment error:', error);
+        showToast('Payment processing failed: ' + error.message, 'error');
+    }
+}
+
+// Create Razorpay order via Edge Function
+async function createRazorpayOrder(bookingData) {
+    const orderData = {
+        hotel_name: selectedHotel.name,
+        amount: Math.round(totalAmount * 100),
+        currency: 'INR',
+        receipt: bookingData.booking_number,
+        notes: {
+            booking_id: bookingData.booking_number,
+            hotel: selectedHotel.name,
+            guest_name: document.getElementById('guest-name').value
+        }
+    };
+
+    const response = await fetch(RAZORPAY_ORDER_FUNCTION, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(orderData)
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Order creation failed: ${error}`);
+    }
+
+    return await response.json();
+}
+
+// Create booking record
+// UPDATE: Create booking record with 3 categories
+async function createBookingRecord() {
+  const name = document.getElementById('guest-name').value.trim();
+  const email = document.getElementById('guest-email').value.trim();
+  const phone = document.getElementById('guest-phone').value.trim();
+  const specialRequests = document.getElementById('special-requests').value.trim();
+  const taxRate = selectedRate >= 7500 ? 0.18 : 0.05;
+  const bookingNumber = 'KAK-' + Date.now().toString().slice(-6) + Math.random().toString(36).substr(2, 3).toUpperCase();
+  
+  const bookingData = {
+    booking_number: bookingNumber,
+    hotel: selectedHotel.name,
+    tax_rate: taxRate,
+    room_type: selectedRoom,
+    meal_plan: selectedMealPlan,
+    num_rooms: selectedNumRooms,
+    num_adults: selectedAdults,
+    num_children_above_6: selectedChildrenAbove6,  // NEW FIELD
+    num_children_below_6: selectedChildrenBelow6,  // NEW FIELD
+    guest_name: name,
+    guest_email: email,
+    guest_phone: phone,
+    special_requests: specialRequests,
+    checkin: selectedCheckin,
+    checkout: selectedCheckout,
+    total_nights: selectedNights,
+    total_amount: totalAmount,
+    payment_method: selectedPaymentMethod,
+    status: 'pending',
+    offers_data: applicableOffers,
+    addons_data: selectedAddons.map(index => selectedHotel.addons[index]),
+    convenience_fee: convenienceFee,
+    commission: commission,
+    gst_on_commission: gstOnCommission,
+    razorpay_order_id: ''
+  };
+
+  const { data, error } = await supabaseClient
+    .from('bookings')
+    .insert([bookingData])
+    .select();
+
+  if (error) throw error;
+  return data[0];
+}
+
+// UPDATE: Generate Voucher with 3 categories
+function generateVoucher() {
+  const mealPlanText = currentBooking.meal_plan === 'ep' ? 'Room Only (EP)' : 'Breakfast Included (CP)';
+  
+  let convenienceFeeHtml = '';
+  if (currentBooking.convenience_fee > 0) {
+    convenienceFeeHtml = `
+      <div class="convenience-fee-breakdown" style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; margin: 8px 0;">
+        <div class="fee-item main" style="color: white;">
+          <span>Payment Gateway Charges:</span>
+          <span>₹${currentBooking.convenience_fee}</span>
+        </div>
+        <div class="fee-item sub" style="color: rgba(255,255,255,0.8);">
+          <span>Razorpay Commission (2%):</span>
+          <span>₹${currentBooking.commission}</span>
+        </div>
+        <div class="fee-item sub" style="color: rgba(255,255,255,0.8);">
+          <span>GST on Commission (18%):</span>
+          <span>₹${currentBooking.gst_on_commission}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  document.getElementById('voucher-content').innerHTML = `
+    <div class="voucher-header">
+      <h2 class="text-3xl font-bold mb-2">KAKKSON HOTELS</h2>
+      <h3 class="text-xl">BOOKING CONFIRMATION VOUCHER</h3>
+    </div>
+    
+    <div class="voucher-details">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Guest Information</h4>
+          <p><strong>Booking ID:</strong> ${currentBooking.booking_number}</p>
+          <p><strong>Guest Name:</strong> ${currentBooking.guest_name}</p>
+          <p><strong>Email:</strong> ${currentBooking.guest_email}</p>
+          <p><strong>Phone:</strong> ${currentBooking.guest_phone}</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Booking Details</h4>
+          <p><strong>Hotel:</strong> ${currentBooking.hotel}</p>
+          <p><strong>Room Type:</strong> ${currentBooking.room_type}</p>
+          <p><strong>Meal Plan:</strong> ${mealPlanText}</p>
+          <p><strong>Rooms:</strong> ${currentBooking.num_rooms}</p>
+        </div>
+      </div>
+      
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Stay Details</h4>
+          <p><strong>Check-in:</strong> ${currentBooking.checkin}</p>
+          <p><strong>Check-out:</strong> ${currentBooking.checkout}</p>
+          <p><strong>Nights:</strong> ${currentBooking.total_nights}</p>
+          <p><strong>Guests:</strong> ${currentBooking.num_adults} Adults, ${currentBooking.num_children_above_6 || 0} Children (6+), ${currentBooking.num_children_below_6 || 0} Children (<6)</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Payment Summary</h4>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span>Room Charges:</span>
+              <span>₹${roomCharges}</span>
+            </div>
+            ${addonsCharges > 0 ? `
+              <div class="flex justify-between">
+                <span>Additional Services:</span>
+                <span>₹${addonsCharges}</span>
+              </div>
+            ` : ''}
+            ${offerDiscount > 0 ? `
+              <div class="flex justify-between text-green-300">
+                <span>Offer Discount:</span>
+                <span>-₹${offerDiscount}</span>
+              </div>
+            ` : ''}
+            <div class="flex justify-between">
+              <span>Tax (5%):</span>
+              <span>₹${taxAmount}</span>
+            </div>
+            ${convenienceFeeHtml}
+            <div class="flex justify-between font-bold text-lg border-t border-white border-opacity-30 pt-2 mt-2">
+              <span>Total Amount:</span>
+              <span>₹${totalAmount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      ${currentBooking.special_requests ? `
+        <div class="mt-6">
+          <h4 class="font-semibold text-lg mb-3">Special Requests</h4>
+          <p class="bg-white bg-opacity-10 p-3 rounded">${currentBooking.special_requests}</p>
+        </div>
+      ` : ''}
+    </div>
+    
+    <div class="text-center text-sm mt-6">
+      <p>Thank you for choosing Kakkson Hotels!</p>
+      <p>We look forward to welcoming you.</p>
+      <p class="mt-2 text-xs opacity-75">Voucher generated on: ${new Date().toLocaleDateString()}</p>
+    </div>
+  `;
+}
+
+// Update booking with order ID
+async function updateBookingWithOrderId(bookingNumber, orderId) {
+  const { error } = await supabaseClient
+    .from('bookings')
+    .update({ 
+      razorpay_order_id: orderId
+    })
+    .eq('booking_number', bookingNumber);
+
+  if (error) console.error('Error updating order ID:', error);
+}
+
+// Update booking status
+async function updateBookingStatus(bookingNumber, status) {
+  const { error } = await supabaseClient
+    .from('bookings')
+    .update({ 
+      status: status
+    })
+    .eq('booking_number', bookingNumber);
+
+  if (error) throw error;
+}
+
+// Update hotel inventory after booking
+async function updateHotelInventory() {
+  try {
+    const dates = getDatesBetween(selectedCheckin, selectedCheckout);
+    
+    dates.forEach(dateStr => {
+      if (!selectedHotel.inventory[dateStr]) {
+        selectedHotel.inventory[dateStr] = {};
+      }
+      if (selectedHotel.inventory[dateStr][selectedRoom] === undefined) {
+        selectedHotel.inventory[dateStr][selectedRoom] = 10;
+      }
+      
+      selectedHotel.inventory[dateStr][selectedRoom] = Math.max(
+        0, 
+        selectedHotel.inventory[dateStr][selectedRoom] - selectedNumRooms
+      );
+    });
+
+    const { error } = await supabaseClient
+      .from('hotels')
+      .update({
+        inventory: selectedHotel.inventory
+      })
+      .eq('id', selectedHotel.id);
+
+    if (error) throw error;
+
+    console.log('✅ Inventory updated successfully');
+    await loadHotelData();
+    
+  } catch (error) {
+    console.error('Error updating inventory:', error);
+    throw error;
+  }
+}
+
+// Validation functions
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+function validatePhone(phone) {
+  const re = /^[0-9]{10}$/;
+  return re.test(phone.replace(/\D/g, ''));
+}
+
+// Generate Voucher for Display with convenience fee
+function generateVoucher() {
+  const mealPlanText = currentBooking.meal_plan === 'ep' ? 'Room Only (EP)' : 'Breakfast Included (CP)';
+  
+  let convenienceFeeHtml = '';
+  if (currentBooking.convenience_fee > 0) {
+    convenienceFeeHtml = `
+      <div class="convenience-fee-breakdown" style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; margin: 8px 0;">
+        <div class="fee-item main" style="color: white;">
+          <span>Payment Gateway Charges:</span>
+          <span>₹${currentBooking.convenience_fee}</span>
+        </div>
+        <div class="fee-item sub" style="color: rgba(255,255,255,0.8);">
+          <span>Razorpay Commission (2%):</span>
+          <span>₹${currentBooking.commission}</span>
+        </div>
+        <div class="fee-item sub" style="color: rgba(255,255,255,0.8);">
+          <span>GST on Commission (18%):</span>
+          <span>₹${currentBooking.gst_on_commission}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  document.getElementById('voucher-content').innerHTML = `
+    <div class="voucher-header">
+      <h2 class="text-3xl font-bold mb-2">KAKKSON HOTELS</h2>
+      <h3 class="text-xl">BOOKING CONFIRMATION VOUCHER</h3>
+    </div>
+    
+    <div class="voucher-details">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Guest Information</h4>
+          <p><strong>Booking ID:</strong> ${currentBooking.booking_number}</p>
+          <p><strong>Guest Name:</strong> ${currentBooking.guest_name}</p>
+          <p><strong>Email:</strong> ${currentBooking.guest_email}</p>
+          <p><strong>Phone:</strong> ${currentBooking.guest_phone}</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Booking Details</h4>
+          <p><strong>Hotel:</strong> ${currentBooking.hotel}</p>
+          <p><strong>Room Type:</strong> ${currentBooking.room_type}</p>
+          <p><strong>Meal Plan:</strong> ${mealPlanText}</p>
+          <p><strong>Rooms:</strong> ${currentBooking.num_rooms}</p>
+        </div>
+      </div>
+      
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Stay Details</h4>
+          <p><strong>Check-in:</strong> ${currentBooking.checkin}</p>
+          <p><strong>Check-out:</strong> ${currentBooking.checkout}</p>
+          <p><strong>Nights:</strong> ${currentBooking.total_nights}</p>
+          <p><strong>Guests:</strong> ${currentBooking.num_adults} Adults, ${currentBooking.num_children || 0} Children</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-3">Payment Summary</h4>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span>Room Charges:</span>
+              <span>₹${roomCharges}</span>
+            </div>
+            ${addonsCharges > 0 ? `
+              <div class="flex justify-between">
+                <span>Additional Services:</span>
+                <span>₹${addonsCharges}</span>
+              </div>
+            ` : ''}
+            ${offerDiscount > 0 ? `
+              <div class="flex justify-between text-green-300">
+                <span>Offer Discount:</span>
+                <span>-₹${offerDiscount}</span>
+              </div>
+            ` : ''}
+            <div class="flex justify-between">
+              <span>Tax (5%):</span>
+              <span>₹${taxAmount}</span>
+            </div>
+            ${convenienceFeeHtml}
+            <div class="flex justify-between font-bold text-lg border-t border-white border-opacity-30 pt-2 mt-2">
+              <span>Total Amount:</span>
+              <span>₹${totalAmount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      ${currentBooking.special_requests ? `
+        <div class="mt-6">
+          <h4 class="font-semibold text-lg mb-3">Special Requests</h4>
+          <p class="bg-white bg-opacity-10 p-3 rounded">${currentBooking.special_requests}</p>
+        </div>
+      ` : ''}
+    </div>
+    
+    <div class="text-center text-sm mt-6">
+      <p>Thank you for choosing Kakkson Hotels!</p>
+      <p>We look forward to welcoming you.</p>
+      <p class="mt-2 text-xs opacity-75">Voucher generated on: ${new Date().toLocaleDateString()}</p>
+    </div>
+  `;
+}
+
+async function sendEmailVoucher() {
+    if (!currentBooking) {
+        console.error('No booking data available');
+        showToast('No booking data found', 'error');
+        return;
+    }
+
+    try {
+        // Show loading status
+        const emailStatus = document.getElementById('email-status');
+        const emailStatusText = document.getElementById('email-status-text');
+        if (emailStatus) {
+            emailStatus.style.display = 'block';
+            emailStatusText.textContent = 'Preparing voucher...';
+            emailStatus.className = 'mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg';
+        }
+
+        // Get hotel details
+        const hotel = hotels.find(h => h.name === currentBooking.hotel);
+        const hotelAdminEmail = hotel?.admin_email || '';
+        const hotelLogo = hotel?.logo || 'https://i.ibb.co/rKH8BQr9/images-3.png';
+        const hotelAddress = hotel?.address || 'Hotel Address Not Specified';
+        const hotelPhone = hotel?.contact_phone || 'N/A';
+        
+        // Format dates
+        const formatDate = (dateStr) => {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        };
+
+        // ✅ FIXED: Use 'email' not 'to_email'
+        const guestEmailData = {
+            // ⭐ REQUIRED: Recipient email for guest (use 'email' as per template)
+            email: currentBooking.guest_email,
+            
+            // Optional but good to include
+            to_email: currentBooking.guest_email,
+            reply_to: currentBooking.guest_email,
+            
+            // Guest details
+            guest_name: currentBooking.guest_name,
+            guest_email: currentBooking.guest_email,
+            guest_phone: currentBooking.guest_phone || 'Not provided',
+            
+            // Booking details
+            booking_number: currentBooking.booking_number,
+            hotel_name: currentBooking.hotel,
+            hotel_logo: hotelLogo,
+            hotel_address: hotelAddress,
+            hotel_phone: hotelPhone,
+            
+            // Stay details
+            checkin: formatDate(currentBooking.checkin),
+            checkout: formatDate(currentBooking.checkout),
+            total_nights: currentBooking.total_nights,
+            total_amount: currentBooking.total_amount,
+            room_type: currentBooking.room_type,
+            num_rooms: currentBooking.num_rooms,
+            num_adults: currentBooking.num_adults,
+            num_children_above_6: currentBooking.num_children_above_6 || 0,
+            num_children_below_6: currentBooking.num_children_below_6 || 0,
+            meal_plan: currentBooking.meal_plan === 'ep' ? 'Room Only' : 'Breakfast Included',
+            special_requests: currentBooking.special_requests || 'None',
+            payment_method: currentBooking.payment_method,
+            
+            // Dates
+            booking_date: formatDate(currentBooking.created_at || new Date()),
+            checkin_time: '2:00 PM',
+            checkout_time: '12:00 PM',
+            
+            // Charges
+            room_charges: (currentBooking.total_amount * 0.8).toFixed(2),
+            tax_amount: (currentBooking.total_amount * 0.05).toFixed(2),
+            tax_rate: 5,
+            status: 'CONFIRMED'
+        };
+
+        console.log('📧 Sending guest email to:', guestEmailData.email);
+
+        // Send to guest
+        const guestResponse = await emailjs.send(
+            'service_nvktc13',
+            'template_0wdymy9',
+            guestEmailData
+        );
+        
+        console.log('✅ Guest email sent:', guestResponse.status);
+        
+        let adminResponse = null;
+        
+        // Send to admin if email exists
+        if (hotelAdminEmail && hotelAdminEmail.includes('@')) {
+            const adminEmailData = {
+                ...guestEmailData,
+                // ⭐ REQUIRED: Different recipient for admin
+                email: hotelAdminEmail,
+                to_name: 'Hotel Admin',
+                booking_time: new Date().toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            };
+
+            console.log('📧 Sending admin email to:', adminEmailData.email);
+            
+            adminResponse = await emailjs.send(
+                'service_nvktc13',
+                'template_ve4vlmj',  // Different template for admin
+                adminEmailData
+            );
+            
+            console.log('✅ Admin email sent:', adminResponse.status);
+        }
+
+        // Update UI
+        if (emailStatus) {
+            emailStatusText.textContent = hotelAdminEmail 
+                ? 'Voucher sent to guest and hotel admin!' 
+                : 'Voucher sent to guest!';
+            emailStatus.className = 'mt-4 p-3 bg-green-50 border border-green-200 rounded-lg';
+        }
+        
+        showToast('Booking confirmed! Voucher emailed successfully.', 'success');
+
+    } catch (error) {
+        console.error('❌ Email sending failed:', error);
+        
+        // Update UI for error
+        const emailStatus = document.getElementById('email-status');
+        const emailStatusText = document.getElementById('email-status-text');
+        if (emailStatus) {
+            emailStatusText.textContent = `Email failed: ${error.text || 'Unknown error'}`;
+            emailStatus.className = 'mt-4 p-3 bg-red-50 border border-red-200 rounded-lg';
+        }
+        
+        // Fallback: Download PDF
+        downloadPDFVoucher();
+        
+        showToast('Email failed. PDF voucher downloaded.', 'warning');
+    }
+}
+
+function downloadVoucherFile() {
+    // Check if jsPDF is available
+    if (typeof jspdf === 'undefined') {
+        console.error('jsPDF not loaded');
+        downloadTextVoucher(); // Fallback to text
+        return;
+    }
+
+    try {
+        // Use the correct jsPDF instance (jspdf.jsPDF)
+        const doc = new jspdf.jsPDF();
+        
+        let yPosition = 20;
+        
+        // Add header
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('KAKKSON HOTELS', 105, yPosition, { align: 'center' });
+        
+        yPosition += 10;
+        doc.setFontSize(16);
+        doc.text('BOOKING CONFIRMATION VOUCHER', 105, yPosition, { align: 'center' });
+        
+        yPosition += 15;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Booking ID: ${currentBooking.booking_number}`, 20, yPosition);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, yPosition);
+        
+        // Guest Information
+        yPosition += 20;
+        doc.setFont('helvetica', 'bold');
+        doc.text('GUEST INFORMATION', 20, yPosition);
+        
+        yPosition += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Name: ${currentBooking.guest_name}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Email: ${currentBooking.guest_email}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Phone: ${currentBooking.guest_phone}`, 25, yPosition);
+        
+        // Booking Details
+        yPosition += 15;
+        doc.setFont('helvetica', 'bold');
+        doc.text('BOOKING DETAILS', 20, yPosition);
+        
+        yPosition += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Hotel: ${currentBooking.hotel}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Room Type: ${currentBooking.room_type}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Rooms: ${currentBooking.num_rooms}`, 25, yPosition);
+        
+        yPosition += 8;
+        const mealPlan = currentBooking.meal_plan === 'ep' ? 'Room Only (EP)' : 'Breakfast Included (CP)';
+        doc.text(`Meal Plan: ${mealPlan}`, 25, yPosition);
+        
+        // Stay Details
+        yPosition += 15;
+        doc.setFont('helvetica', 'bold');
+        doc.text('STAY DETAILS', 20, yPosition);
+        
+        yPosition += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Check-in: ${currentBooking.checkin}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Check-out: ${currentBooking.checkout}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Nights: ${currentBooking.total_nights}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Guests: ${currentBooking.num_adults} Adults, ${currentBooking.num_children || 0} Children`, 25, yPosition);
+        
+        // Payment Summary
+        yPosition += 15;
+        doc.setFont('helvetica', 'bold');
+        doc.text('PAYMENT SUMMARY', 20, yPosition);
+        
+        yPosition += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Total Amount: ₹${currentBooking.total_amount}`, 25, yPosition);
+        
+        yPosition += 8;
+        doc.text(`Status: CONFIRMED`, 25, yPosition);
+        
+        // Footer
+        yPosition += 20;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Thank you for choosing Kakkson Hotels!', 105, yPosition, { align: 'center' });
+        
+        yPosition += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Please present this voucher at the hotel reception', 105, yPosition, { align: 'center' });
+        
+        // Save the PDF
+        doc.save(`voucher-${currentBooking.booking_number}.pdf`);
+        
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+        // Fallback to text voucher
+        downloadTextVoucher();
+    }
+}
+
+// Fallback text voucher function
+function downloadTextVoucher() {
+    const voucherContent = `
+KAKKSON HOTELS - BOOKING CONFIRMATION
+======================================
+
+BOOKING ID: ${currentBooking.booking_number}
+CONFIRMED ON: ${new Date().toLocaleDateString()}
+
+GUEST INFORMATION:
+Name: ${currentBooking.guest_name}
+Email: ${currentBooking.guest_email}
+Phone: ${currentBooking.guest_phone}
+
+BOOKING DETAILS:
+Hotel: ${currentBooking.hotel}
+Room: ${currentBooking.room_type}
+Check-in: ${currentBooking.checkin}
+Check-out: ${currentBooking.checkout}
+Nights: ${currentBooking.total_nights}
+Guests: ${currentBooking.num_adults} Adults
+
+TOTAL AMOUNT: ₹${currentBooking.total_amount}
+STATUS: CONFIRMED
+
+Thank you for choosing Kakkson Hotels!
+Present this voucher at reception.
+======================================
+    `.trim();
+
+    const blob = new Blob([voucherContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `voucher-${currentBooking.booking_number}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Utility Functions
+function getStartingPrice(hotel) {
+  if (!hotel.roomTypes || hotel.roomTypes.length === 0) return 0;
+  
+  // Calculate single adult price for each room type
+  let lowestPrice = Infinity;
+  
+  hotel.roomTypes.forEach(roomType => {
+    const singleEpRate = calculateRoomRate(hotel, roomType, selectedCheckin, selectedCheckout, 'ep', 1, 0, 0);
+    if (singleEpRate < lowestPrice) {
+      lowestPrice = singleEpRate;
+    }
+  });
+  
+  return lowestPrice === Infinity ? 0 : lowestPrice;
+}
+
+function getMaxAvailable(hotel, roomType, checkinStr, checkoutStr) {
+  if (!checkinStr || !checkoutStr) return 0;
+  
+  const dates = getDatesBetween(checkinStr, checkoutStr);
+  let minAvailable = Infinity;
+
+  dates.forEach(dateStr => {
+    const available = hotel.inventory[dateStr]?.[roomType] || 0;
+    minAvailable = Math.min(minAvailable, available);
+  });
+
+  return minAvailable === Infinity ? 0 : minAvailable;
+}
+
+function getAverageRate(hotel, roomType, checkinStr, checkoutStr, mealPlan = 'ep') {
+  if (!checkinStr || !checkoutStr) {
+    const roomDetail = hotel.roomDetails[roomType] || {};
+    return mealPlan === 'ep' ? (roomDetail.basePrice || 1500) : (roomDetail.cpPrice || 1800);
+  }
+  
+  const dates = getDatesBetween(checkinStr, checkoutStr);
+  let totalRate = 0;
+  let nights = dates.length;
+
+  dates.forEach(dateStr => {
+    let rate = hotel.rates[dateStr]?.[roomType]?.[mealPlan] || 0;
+    if (rate === 0) {
+      const roomDetail = hotel.roomDetails[roomType] || {};
+      rate = mealPlan === 'ep' ? (roomDetail.basePrice || 1500) : (roomDetail.cpPrice || 1800);
+    }
+    totalRate += rate;
+  });
+
+  return nights > 0 ? Math.round(totalRate / nights) : (mealPlan === 'ep' ? 1500 : 1800);
+}
+
+function calculateNights(checkinStr, checkoutStr) {
+  const checkin = new Date(checkinStr);
+  const checkout = new Date(checkoutStr);
+  return Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+}
+
+function getDatesBetween(startStr, endStr) {
+  const dates = [];
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  
+  for (let date = new Date(start); date < end; date.setDate(date.getDate() + 1)) {
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+
+function getTotalAvailableRooms(hotel) {
+  if (!hotel.roomTypes || hotel.roomTypes.length === 0) return 0;
+  
+  let totalAvailable = 0;
+  hotel.roomTypes.forEach(roomType => {
+    const available = getMaxAvailable(hotel, roomType, selectedCheckin, selectedCheckout);
+    totalAvailable += available;
+  });
+  
+  return totalAvailable;
+}
+
+// Navigation Functions
+function showHotels() {
+  document.getElementById('hotels-section').style.display = 'block';
+  document.getElementById('rooms-section').style.display = 'none';
+  document.getElementById('guest-section').style.display = 'none';
+  document.getElementById('payment-section').style.display = 'none';
+  document.getElementById('confirmation-section').style.display = 'none';
+  updateProgress(20);
+}
+
+function showRoomsSection() {
+  document.getElementById('hotels-section').style.display = 'none';
+  document.getElementById('rooms-section').style.display = 'block';
+  document.getElementById('guest-section').style.display = 'none';
+  document.getElementById('payment-section').style.display = 'none';
+  document.getElementById('confirmation-section').style.display = 'none';
+}
+
+function showRooms() {
+  showRoomsSection();
+  updateProgress(40);
+}
+
+function showGuestSection() {
+  document.getElementById('hotels-section').style.display = 'none';
+  document.getElementById('rooms-section').style.display = 'none';
+  document.getElementById('guest-section').style.display = 'block';
+  document.getElementById('payment-section').style.display = 'none';
+  document.getElementById('confirmation-section').style.display = 'none';
+}
+
+function showPaymentSectionView() {
+  document.getElementById('hotels-section').style.display = 'none';
+  document.getElementById('rooms-section').style.display = 'none';
+  document.getElementById('guest-section').style.display = 'none';
+  document.getElementById('payment-section').style.display = 'block';
+  document.getElementById('confirmation-section').style.display = 'none';
+}
+
+function showConfirmationSection() {
+  document.getElementById('hotels-section').style.display = 'none';
+  document.getElementById('rooms-section').style.display = 'none';
+  document.getElementById('guest-section').style.display = 'none';
+  document.getElementById('payment-section').style.display = 'none';
+  document.getElementById('confirmation-section').style.display = 'block';
+}
+
+function updateProgress(percent) {
+  document.getElementById('progress-fill').style.width = percent + '%';
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast-message toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+}
+
+function downloadPDFVoucher() {
+    if (!currentBooking) {
+        showToast('No booking data available', 'error');
+        return;
+    }
+
+    try {
+        // Use jsPDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Colors
+        const primaryColor = [25, 118, 210]; // Blue
+        const secondaryColor = [255, 152, 0]; // Orange
+        const darkColor = [38, 50, 56]; // Dark gray
+        const lightColor = [245, 247, 249]; // Light gray
+        
+        let yPosition = 20;
+        
+        // Header with background
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, 210, 50, 'F');
+        
+        // Hotel Logo/Name
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(24);
+        doc.setTextColor(255, 255, 255);
+        doc.text('KAKKSON HOTELS', 105, 25, { align: 'center' });
+        
+        // Voucher Title
+        doc.setFontSize(16);
+        doc.text('BOOKING CONFIRMATION VOUCHER', 105, 35, { align: 'center' });
+        
+        yPosition = 60;
+        
+        // Booking ID and Date
+        doc.setFontSize(12);
+        doc.setTextColor(...darkColor);
+        doc.text(`Booking ID: ${currentBooking.booking_number}`, 20, yPosition);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, yPosition);
+        
+        yPosition += 20;
+        
+        // Guest Information Section
+        doc.setFillColor(...lightColor);
+        doc.rect(15, yPosition - 5, 180, 10, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('GUEST INFORMATION', 20, yPosition);
+        
+        yPosition += 15;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkColor);
+        doc.text(`Name: ${currentBooking.guest_name}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Email: ${currentBooking.guest_email}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Phone: ${currentBooking.guest_phone || 'N/A'}`, 25, yPosition);
+        
+        yPosition += 15;
+        
+        // Booking Details Section
+        doc.setFillColor(...lightColor);
+        doc.rect(15, yPosition - 5, 180, 10, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('BOOKING DETAILS', 20, yPosition);
+        
+        yPosition += 15;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkColor);
+        doc.text(`Hotel: ${currentBooking.hotel}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Room Type: ${currentBooking.room_type}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Rooms: ${currentBooking.num_rooms}`, 25, yPosition);
+        yPosition += 8;
+        const mealPlan = currentBooking.meal_plan === 'ep' ? 'Room Only (EP)' : 'Breakfast Included (CP)';
+        doc.text(`Meal Plan: ${mealPlan}`, 25, yPosition);
+        
+        yPosition += 15;
+        
+        // Stay Details Section
+        doc.setFillColor(...lightColor);
+        doc.rect(15, yPosition - 5, 180, 10, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('STAY DETAILS', 20, yPosition);
+        
+        yPosition += 15;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkColor);
+        doc.text(`Check-in: ${currentBooking.checkin}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Check-out: ${currentBooking.checkout}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Nights: ${currentBooking.total_nights}`, 25, yPosition);
+        yPosition += 8;
+        doc.text(`Guests: ${currentBooking.num_adults} Adults, ${currentBooking.num_children || 0} Children`, 25, yPosition);
+        
+        yPosition += 15;
+        
+        // Payment Summary Section
+        doc.setFillColor(...lightColor);
+        doc.rect(15, yPosition - 5, 180, 10, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('PAYMENT SUMMARY', 20, yPosition);
+        
+        yPosition += 15;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkColor);
+        
+        // Room Charges
+        doc.text(`Room Charges:`, 25, yPosition);
+        doc.text(`₹${roomCharges}`, 180, yPosition, { align: 'right' });
+        yPosition += 8;
+        
+        // Additional Services
+        if (addonsCharges > 0) {
+            doc.text(`Additional Services:`, 25, yPosition);
+            doc.text(`₹${addonsCharges}`, 180, yPosition, { align: 'right' });
+            yPosition += 8;
+        }
+        
+        // Offer Discount
+        if (offerDiscount > 0) {
+            doc.setTextColor(76, 175, 80); // Green for discount
+            doc.text(`Special Offer Discount:`, 25, yPosition);
+            doc.text(`-₹${offerDiscount}`, 180, yPosition, { align: 'right' });
+            doc.setTextColor(...darkColor);
+            yPosition += 8;
+        }
+        
+        // Tax
+        doc.text(`Tax (5%):`, 25, yPosition);
+        doc.text(`₹${taxAmount}`, 180, yPosition, { align: 'right' });
+        yPosition += 8;
+        
+        // Convenience Fee
+        if (convenienceFee > 0) {
+            doc.text(`Payment Gateway Charges:`, 25, yPosition);
+            doc.text(`₹${convenienceFee}`, 180, yPosition, { align: 'right' });
+            yPosition += 8;
+        }
+        
+        // Total Amount
+        yPosition += 5;
+        doc.setDrawColor(...primaryColor);
+        doc.setLineWidth(0.5);
+        doc.line(25, yPosition, 180, yPosition);
+        yPosition += 8;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(...primaryColor);
+        doc.text(`Total Amount:`, 25, yPosition);
+        doc.text(`₹${totalAmount}`, 180, yPosition, { align: 'right' });
+        
+        yPosition += 15;
+        
+        // Status
+        doc.setFontSize(12);
+        doc.setTextColor(76, 175, 80); // Green for confirmed
+        doc.text(`Status: CONFIRMED`, 25, yPosition);
+        
+        yPosition += 20;
+        
+        // Footer
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Thank you for choosing Kakkson Hotels!', 105, yPosition, { align: 'center' });
+        yPosition += 6;
+        doc.text('We look forward to welcoming you.', 105, yPosition, { align: 'center' });
+        yPosition += 6;
+        doc.text('Please present this voucher at the hotel reception.', 105, yPosition, { align: 'center' });
+        yPosition += 10;
+        doc.text(`Voucher generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, yPosition, { align: 'center' });
+        
+        // Save the PDF
+        doc.save(`voucher-${currentBooking.booking_number}.pdf`);
+        showToast('PDF voucher downloaded successfully!', 'success');
+        
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+        // Fallback to text voucher
+        downloadTextVoucher();
+        showToast('PDF download failed. Text voucher downloaded instead.', 'warning');
+    }
+}
+
+function newBooking() {
+  // Reset all form fields
+  document.getElementById('guest-name').value = '';
+  document.getElementById('guest-email').value = '';
+  document.getElementById('guest-phone').value = '';
+  document.getElementById('special-requests').value = '';
+  
+  // Reset to today's date
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const format = (date) => date.toISOString().split('T')[0];
+  document.getElementById('checkin').value = format(today);
+  document.getElementById('checkout').value = format(tomorrow);
+  
+  // Reset global state
+  selectedHotel = null;
+  selectedRoom = null;
+  currentBooking = null;
+  selectedAddons = [];
+  selectedPaymentMethod = '';
+  applicableOffers = [];
+  offerDiscount = 0;
+  convenienceFee = 0;
+  commission = 0;
+  gstOnCommission = 0;
+  
+  // Go back to first screen
+  showHotels();
+  
+  // Reload hotels to get latest availability
+  loadHotelData();
+  
+  showToast('Start a new booking!', 'info');
+}
+
+// Room Carousel Auto-Rotation
+function initRoomCarousel(carousel) {
+    const inner = carousel.querySelector('.carousel-inner');
+    const items = carousel.querySelectorAll('.carousel-item');
+    const indicators = carousel.querySelectorAll('.carousel-indicator');
+    
+    if (items.length <= 1) return;
+    
+    let currentIndex = 0;
+    const totalItems = items.length;
+    
+    const intervalId = setInterval(() => {
+        currentIndex = (currentIndex + 1) % totalItems;
+        inner.style.transform = `translateX(${-currentIndex * 100}%)`;
+        updateRoomCarouselIndicators(indicators, currentIndex);
+    }, 5000);
+    
+    carousel.dataset.intervalId = intervalId;
+}
+
+// Update room carousel indicators
+function updateRoomCarouselIndicators(indicators, activeIndex) {
+    indicators.forEach((indicator, index) => {
+        indicator.classList.toggle('active', index === activeIndex);
+    });
+}
+
+// Navigation functions for room carousel
+function navigateRoomCarousel(button, direction) {
+    const carousel = button.closest('.room-photo-carousel');
+    const inner = carousel.querySelector('.carousel-inner');
+    const items = carousel.querySelectorAll('.carousel-item');
+    const indicators = carousel.querySelectorAll('.carousel-indicator');
+    
+    const currentTransform = inner.style.transform || 'translateX(0px)';
+    const currentIndex = parseInt(currentTransform.match(/translateX\((-?\d+)px\)/)?.[1] || 0) / 100;
+    const newIndex = (currentIndex - direction + items.length) % items.length;
+    
+    inner.style.transform = `translateX(${-newIndex * 100}%)`;
+    updateRoomCarouselIndicators(indicators, newIndex);
+}
+
+// Go to specific slide for room carousel
+function goToRoomCarouselSlide(button, index) {
+    const carousel = button.closest('.room-photo-carousel');
+    const inner = carousel.querySelector('.carousel-inner');
+    const indicators = carousel.querySelectorAll('.carousel-indicator');
+    
+    resetRoomCarouselTimer(carousel);
+    inner.style.transform = `translateX(${-index * 100}%)`;
+    updateRoomCarouselIndicators(indicators, index);
+}
+
+function resetRoomCarouselTimer(carousel) {
+    if (carousel.dataset.intervalId) {
+        clearInterval(parseInt(carousel.dataset.intervalId));
+    }
+    initRoomCarousel(carousel);
+}
+
+// Close modal when clicking outside
+document.getElementById('amenities-modal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeAmenitiesModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAmenitiesModal();
+  }
+});
+// CORRECT EmailJS initialization with Public Key
+emailjs.init("qigQh2PVgaMufQQR3"); // This is your public key
+
+// CORRECT Email sending with correct IDs
+async function sendTestEmail() {
+    try {
+        const response = await emailjs.send(
+            'service_nvktc13',     // Service ID (from Email Services)
+            'template_0wdymy9',    // Template ID (from Email Templates)
+            {
+                to_name: 'John Doe',
+                to_email: 'john@example.com',
+                message: 'Test email'
+            }
+        );
+        
+        console.log('Email sent:', response.status, response.text);
+        return response;
+    } catch (error) {
+        console.error('Email error:', error);
+        throw error;
+    }
+}
+</script>
+<!-- Room Upgrade Modal -->
+<div id="upgradeModal" class="upgrade-modal">
+    <div class="upgrade-modal-content">
+        <div class="upgrade-modal-header">
+            <h3 class="upgrade-modal-title" id="upgradeModalTitle">Room Upgrade Required</h3>
+            <p class="upgrade-modal-message" id="upgradeModalMessage">
+                Your selected occupancy exceeds the current room capacity.
+            </p>
+        </div>
+        
+        <div id="upgradeRoomSuggestions">
+            <!-- Room suggestions will be populated here -->
+        </div>
+        
+        <div class="upgrade-modal-actions">
+            <button onclick="closeUpgradeModal()" class="btn-secondary" style="flex: 1; padding: 12px; background: #6b7280; color: white; border-radius: 8px;">
+                Adjust Occupancy
+            </button>
+            <button onclick="viewUpgradeRooms()" class="btn-primary" style="flex: 1; padding: 12px; background: #1976d2; color: white; border-radius: 8px;">
+                View Upgrade Options
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
