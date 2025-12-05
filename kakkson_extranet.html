@@ -2905,6 +2905,8 @@ async function deleteHotel(hotelId) {
 
 // ========== FORM HANDLERS ==========
 
+// ========== FORM HANDLERS ==========
+
 document.getElementById('addHotelForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -2974,18 +2976,20 @@ document.getElementById('addHotelForm').addEventListener('submit', async functio
         setLoading(saveButton, false);
     }
 });
+
 document.getElementById('editHotelForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const hotelId = document.getElementById('edit-hotel-id').value;
-    const hotel = hotels.find(h => h.docId === hotelId);
-    const hotel.admin_email = document.getElementById('edit-hotel-admin-email').value.trim();
+    const hotel = hotels.find(h => h.docId === hotelId); // ✅ This is the first declaration
     
     if (!hotel) {
         showToast('Hotel not found', 'error');
         return;
     }
     
+    // ✅ CORRECTED: Use the already declared 'hotel' variable
+    hotel.admin_email = document.getElementById('edit-hotel-admin-email').value.trim();
     hotel.name = document.getElementById('edit-hotel-name').value.trim();
     hotel.location = document.getElementById('edit-hotel-location').value.trim();
     hotel.description = document.getElementById('edit-hotel-description').value.trim();
